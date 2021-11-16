@@ -1,6 +1,6 @@
 from django.test import TestCase
-from .. serializers import ApartmentDetailSerializer
-from .. models import Apartment
+from ..serializers import ApartmentDetailSerializer
+from ..models import Apartment
 
 
 class ApartmentSerializerTestCase(TestCase):
@@ -13,7 +13,8 @@ class ApartmentSerializerTestCase(TestCase):
                                                created_date='2021-07-07 04:34:23.861943', owner_id=None)
         data = [ApartmentDetailSerializer(apartment_1).data]
         expected_data = [
-            {'main_image': None,
+            {'id': 3,
+             'main_image': None,
              'price': 123213,
              'address': 'Test address',
              'adv_type': '',
@@ -21,7 +22,6 @@ class ApartmentSerializerTestCase(TestCase):
              'apartment_type': 'Пентхаус',
              'apart_class': 'Студия, санузел',
              'apartment_area': 21.0,
-             'id': 1,
              'kitchen_area': 11.0,
              'loggia': True,
              'heating_type': 'Газ',
