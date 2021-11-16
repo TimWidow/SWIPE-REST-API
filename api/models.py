@@ -15,12 +15,7 @@ from django.core.mail import send_mail
 
 
 class CustomAbstractUser(AbstractBaseUser, PermissionsMixin):
-    """
-    An abstract base class implementing a fully featured User model with
-    app-admin-compliant permissions.
 
-    Username and password are required. Other fields are optional.
-    """
     username_validator = UnicodeUsernameValidator()
 
     email = models.CharField(
@@ -65,35 +60,19 @@ class CustomAbstractUser(AbstractBaseUser, PermissionsMixin):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def email_user(self, subject, message, from_email=None, **kwargs):
-        """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
     @property
     def token(self):
-        """
-        Позволяет получить токен пользователя путем вызова user.token, вместо
-        user._generate_jwt_token(). Декоратор @property выше делает это
-        возможным. token называется "динамическим свойством".
-        """
         return self._generate_jwt_token()
 
     def get_full_name(self):
-        """
-        Этот метод требуется Django для таких вещей, как обработка электронной
-        почты. Обычно это имя фамилия пользователя, но поскольку мы не
-        используем их, будем возвращать username.
-        """
-        return self.first_name
+        return str(self.first_name) + str(self.last_name)
 
     def get_short_name(self):
-        """ Аналогично методу get_full_name(). """
         return self.first_name
 
     def _generate_jwt_token(self):
-        """
-        Генерирует веб-токен JSON, в котором хранится идентификатор этого
-        пользователя, срок действия токена составляет 1 день от создания
-        """
         dt = datetime.now() + timedelta(days=1)
 
         token = jwt.encode({
@@ -126,18 +105,8 @@ class User(CustomAbstractUser):
 
 
 class UserManager(BaseUserManager):
-    """
-    Django требует, чтобы пользовательские `User`
-    определяли свой собственный класс Manager.
-    Унаследовав от BaseUserManager, мы получаем много кода,
-    используемого Django для создания `User`.
 
-    Все, что нам нужно сделать, это переопределить функцию
-    `create_user`, которую мы будем использовать
-    для создания объектов `User`.
-    """
-
-    def _create_user(self, email: object, password: object = None, **extra_fields: object) -> object:
+    def _create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('Указанный email пользователя должно быть установлено')
 
@@ -152,20 +121,12 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(self, username, email, password=None, **extra_fields):
-        """
-        Создает и возвращает `User` с адресом электронной почты,
-        именем пользователя и паролем.
-        """
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
 
         return self._create_user(username, email, password, **extra_fields)
 
     def create_superuser(self, username, email, password, **extra_fields):
-        """
-        Создает и возвращает пользователя с правами
-        суперпользователя (администратора).
-        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -182,7 +143,7 @@ class PhoneModel(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='related_phone')
     Mobile = models.IntegerField(blank=False)
     isVerified = models.BooleanField(blank=False, default=False)
-    counter = models.IntegerField(default=0, blank=False)  # For HOTP Verification
+    counter = models.IntegerField(default=0, blank=False)
 
     def __str__(self):
         return str(self.Mobile)

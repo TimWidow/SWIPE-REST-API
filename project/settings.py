@@ -7,7 +7,7 @@ from django.conf import settings
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_ROOT = Path(__file__).resolve(strict=True).parent
 
-SECRET_KEY = "42f3214ifs*c+9q#tclf#*&9)@=s(m8&#+d)mrg=vx*%po457p4"
+SECRET_KEY = "ql7uffku8cl)_++*-^x1&ikexbuyec2c6u-56nqr%e!#5@ych5"
 
 DEBUG = True
 
