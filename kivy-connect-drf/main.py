@@ -1,7 +1,6 @@
 # coding: utf-8
 from kivy.app import App
-
-from login.login import Login
+from login import Login
 
 
 class MainApp(App):

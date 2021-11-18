@@ -23,7 +23,7 @@ class WSRequests:
 
     def get_ws_data(self, action_url=None, params=None):
         if action_url is None or params is None:
-            raise ValueError('Action URL o Parametros no pueden ser Nulos')
+            raise ValueError('URL-адрес или параметры не могут быть пустыми')
         # params = urllib.urlencode(params)
         headers = {
             'Authorization': f'Token {self.token}'
@@ -40,7 +40,8 @@ class WSRequests:
     def load_token(self):
         return self.read_file_contents(path='token')
 
-    def read_file_contents(self, path):
+    @staticmethod
+    def read_file_contents(path):
         if os.path.exists(path):
             with open(path) as infile:
                 return infile.read().strip()

@@ -273,7 +273,7 @@ class Apartment(models.Model):
     APART_STATUS = (
         ('Черновая отделка', 'Черновая отделка'),
         ('Требует ремонта', 'Требует ремонта'),
-        ('Требует капитальный ремонт', 'Требует капитальный ремонт'),
+        ('Требуется капитальный ремонт', 'Требуется капитальный ремонт'),
     )
     HEATING_TYPE = (
         ('Газ', 'Газ'),
@@ -296,9 +296,9 @@ class Apartment(models.Model):
         ('Студия, санузел', 'Студия, санузел')
     )
 
-    house = models.ForeignKey(House, on_delete=models.CASCADE, null=True)
-    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, null=True, blank=True)
-    document = models.CharField(choices=DOC_TYPE, max_length=255)
+    house = models.ForeignKey(House, on_delete=models.CASCADE, null=True, verbose_name='ЖК')
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Этаж')
+    document = models.CharField(choices=DOC_TYPE, max_length=255, verbose_name='Документ')
     room_count = models.IntegerField()
     apartment_type = models.CharField(choices=APART_TYPE, max_length=255)
     apartment_status = models.CharField(choices=APART_STATUS, max_length=255)
@@ -317,7 +317,7 @@ class Apartment(models.Model):
     adv_type = models.CharField(choices=ADV_TYPE, max_length=255)
     apart_class = models.CharField(choices=APART_CLASS, max_length=255)
     is_actual = models.BooleanField(default=False)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Владедец объявления', null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Владелец объявления', null=True, blank=True)
     created_date = models.DateTimeField(auto_now=True, null=True)
 
 

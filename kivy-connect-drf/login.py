@@ -4,12 +4,12 @@ from kivy.uix.boxlayout import BoxLayout
 import requests
 import json
 
-from home.home import Home
-from ws.ws import WSRequests
+from home import Home
+from ws import WSRequests
 
 
 class Login(BoxLayout):
-    ws_url = 'http://localhost:8000/client-token/'
+    ws_url = 'http://127.0.0.1:8000/api/login/'
 
     def do_login(self, login, passwd):
         headers = {'content-type': 'application/json'}
@@ -23,18 +23,18 @@ class Login(BoxLayout):
             self.save_token(str=token_dict['token'])
             ws_req = WSRequests()
             user_response = ws_req.get_ws_data(
-                action_url='empresa/rest/get_user_info/',
+                action_url='http://127.0.0.1:8000/api/login/',
                 params={'username': login}
             )
             if user_response.resp_status == 403:
-                print('Permiso Denegado')
+                print('Доступ запрещён')
             else:
                 app = App.get_running_app()
                 app.root_window.remove_widget(app.root)
                 home_window = Home(username=login, login_window=self)
                 app.root_window.add_widget(home_window)
         else:
-            print(f'Usuario o contraseña inválida')
+            print(f'Неправильное имя пользователя или пароль')
 
     def save_token(self, str):
         with open('token', 'w') as outfile:
