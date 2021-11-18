@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.contrib.auth.models import BaseUserManager
 
-from project import settings
+from swipe import settings
 from . import managers
 from django.core.mail import send_mail
 

@@ -10,6 +10,7 @@ CONFIG_ROOT = Path(__file__).resolve(strict=True).parent
 SECRET_KEY = "ql7uffku8cl)_++*-^x1&ikexbuyec2c6u-56nqr%e!#5@ych5"
 
 DEBUG = True
+DEBUG_TOOLBAR = True
 
 ALLOWED_HOSTS = []
 
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_yasg',
+    'easy_maps',
     'api'
 ]
 
@@ -40,7 +42,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'project.urls'
+ROOT_URLCONF = 'swipe.urls'
 
 TEMPLATES = [
     {
@@ -58,8 +60,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'project.wsgi.application'
-
+WSGI_APPLICATION = 'swipe.wsgi.application'
 
 DATABASES = {
     'default': {
@@ -73,6 +74,9 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+PHONENUMBER_DB_FORMAT = 'NATIONAL'
+PHONENUMBER_DEFAULT_REGION = "UA"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -91,7 +95,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Kiev'
 
 USE_I18N = True
 
@@ -99,26 +103,26 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = "/staticfiles/"
+STATIC_URL = "/static/"
 
 if DEBUG:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')]
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 else:
-    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
 
-#smtp
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
+# smtp
+DEFAULT_FROM_EMAIL = 'eat.twix@gmail.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'apikey'
+EMAIL_HOST_PASSWORD = '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'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'dimadjangosendemail@gmail.com'
-EMAIL_HOST_PASSWORD = 'kgjqnlvgusjxukrn'
-
+EMAIL_USE_TLS = True
 
 EASY_MAPS_GOOGLE_KEY = 'AIzaSyAMPq6gbs7dfX-AMgFtCvTpjK8ltHErwcY'
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -126,13 +130,16 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     ],
-   #'DEFAULT_RENDERER_CLASSES': (
-   #    'rest_framework.renderers.JSONRenderer',
-   #),
-   #'DEFAULT_PARSER_CLASSES': (
-   #    'rest_framework.parsers.JSONParser',
-   #),
-   'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # 'DEFAULT_RENDERER_CLASSES': (
+    #    'rest_framework.renderers.JSONRenderer',
+    # ),
+    # 'DEFAULT_PARSER_CLASSES': (
+    #    'rest_framework.parsers.JSONParser',
+    # ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 
 }
 
@@ -157,3 +164,7 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 
 }
+
+if DEBUG_TOOLBAR:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')

@@ -1,7 +1,7 @@
-
+import debug_toolbar
 from django.urls import include, path
 from django.conf.urls.static import static
-from project.settings import MEDIA_ROOT, MEDIA_URL
+from swipe.settings import MEDIA_ROOT, MEDIA_URL
 from django.contrib import admin
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -26,4 +26,5 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('api/', include('api.urls')),
     path('admin/', admin.site.urls),
+    path('__debug__/', include(debug_toolbar.urls)),
 ] + static(MEDIA_URL, document_root=MEDIA_ROOT)
