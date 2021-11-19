@@ -6,18 +6,29 @@ import json
 
 from home import Home
 from ws import WSRequests
+from twilio.rest import Client
+from authy.api import AuthyApiClient
+
+from kivy.network.urlrequest import UrlRequest
+
+# req = UrlRequest()
+
+# client = Client('<your Twilio Account SID here>', '<your Twilio Auth Token here>')
+# verify = client.verify.services('<your Twilio Verify Service SID here>')
+# verify.verifications.create(to='<your phone number here>', channel='sms')
 
 
 class Login(BoxLayout):
     ws_url = 'http://127.0.0.1:8000/api/login/'
 
-    def do_login(self, login, passwd):
+    def do_login(self, email, password):
         headers = {'content-type': 'application/json'}
         params = {
-            'username': login,
-            'password': passwd
+            'email': email,
+            'password': password
         }
         response = requests.post(url=self.ws_url, data=json.dumps(params), headers=headers)
+        print(response.text)
         if response.status_code == 200:
             token_dict = json.loads(response.text)
             self.save_token(str=token_dict['token'])
@@ -39,4 +50,3 @@ class Login(BoxLayout):
     def save_token(self, str):
         with open('token', 'w') as outfile:
             outfile.write(str)
-

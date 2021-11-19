@@ -168,3 +168,5 @@ JWT_AUTH = {
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+
+AUTHY_API_KEY = '8FDRj4VX0UO2b8BChgl7J7khVDXnDzJi'
