@@ -11,7 +11,7 @@ from . import filters as my_filter
 from rest_framework import generics
 from django_filters import rest_framework as filters
 
-from .models import PhoneModel, Apartment, Floor, Contact, House
+from .models import Apartment, Floor, House, User
 from .permissions import IsOwnerOrSuperuserOrReadOnly
 from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
@@ -202,7 +202,7 @@ class ContactList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = ContactListSerializer
-    queryset = Contact.objects.all()
+    queryset = User.objects.all()
     filterset_class = my_filter.ContactListFilter
 
 
@@ -217,7 +217,7 @@ class ContactCreate(generics.CreateAPIView):
 
 class ContactUpdate(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
-    queryset = Contact.objects.all()
+    queryset = User.objects.all()
     serializer_class = ContactSerializer
 
 

@@ -1,9 +1,9 @@
+from abc import ABC
+
 from django.contrib.auth import authenticate
 from . import auth
-
-from . import models
 from rest_framework import serializers
-from .models import User
+from .models import User, House, Promotion, Apartment, Floor
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -26,9 +26,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'token',)
+        fields = ('phone', 'email', 'password', 'token',)
 
     def create(self, validated_data):
+        validated_data['username'] = validated_data['email']
+        print(validated_data)
         return User.objects.create_user(**validated_data)
 
 
@@ -38,6 +40,13 @@ class LoginSerializer(serializers.Serializer):
     Email and password are required.
     Returns a JSON web token.
     """
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
     phone = serializers.IntegerField(write_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
 
@@ -80,7 +89,7 @@ class LoginSerializer(serializers.Serializer):
 
 class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Promotion
+        model = Promotion
         fields = ('type', 'phrase', 'color')
 
 
@@ -88,74 +97,74 @@ class ApartmentListSerializer(serializers.ModelSerializer):
     promotion = PromotionSerializer()
 
     class Meta:
-        model = models.Apartment
+        model = Apartment
         fields = ('id', 'main_image', 'promotion', 'price', 'address', 'created_date', 'room_count', 'apartment_area',
                   'promotion', 'house', 'floor')
 
 
 class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Apartment
-        fields = ('id', 'main_image', 'price', 'address', 'adv_type', 'apartment_status', 'apartment_type', 'apart_class',
-                  'apartment_area', 'kitchen_area', 'loggia', 'heating_type', 'settlement_type', 'commission',
-                  'description', 'owner', 'promotion')
+        model = Apartment
+        fields = (
+        'id', 'main_image', 'price', 'address', 'adv_type', 'apartment_status', 'apartment_type', 'apart_class',
+        'apartment_area', 'kitchen_area', 'loggia', 'heating_type', 'settlement_type', 'commission',
+        'description', 'owner', 'promotion')
 
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Apartment
+        model = Apartment
         fields = ['address', 'floor', 'price', 'document', 'apartment_type', 'room_count', 'apart_class',
                   'apartment_status', 'apartment_area', 'kitchen_area', 'loggia', 'heating_type', 'commission',
                   'description', 'owner']
 
     def create(self, validated_data):
-        return models.Apartment.objects.create(**validated_data)
-
+        return Apartment.objects.create(**validated_data)
 
 
 class FloorListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Floor
+        model = Floor
         fields = ('section', 'name')
 
 
 class FloorCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Floor
+        model = Floor
         fields = ['id', 'section', 'name']
 
     def create(self, validated_data):
-        return models.Floor.objects.create(**validated_data)
+        return Floor.objects.create(**validated_data)
 
 
 class ContactListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Contact
+        model = User
         fields = ['id', 'user', 'first_name', 'last_name']
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Contact
+        model = User
         fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.User
+        model = User
         fields = ['first_name', 'last_name', 'email', 'subscribe_expired', 'subscribe', 'agent_first_name',
                   'agent_last_name', 'notification']
 
 
 class HouseListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.House
+        model = House
         fields = ['id', 'address']
 
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Contact
+        model = User
         fields = '__all__'
 
 
@@ -163,9 +172,5 @@ class HouseDetailSerializer(serializers.ModelSerializer):
     manager = ContactSerializer()
 
     class Meta:
-        model = models.House
+        model = House
         fields = '__all__'
-
-
-
-

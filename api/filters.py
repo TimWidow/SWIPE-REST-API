@@ -1,6 +1,5 @@
-from rest_framework import generics
 from django_filters import rest_framework as filters
-from . import models
+from .models import Apartment, User
 
 
 class ApartmentFilter(filters.FilterSet):
@@ -10,13 +9,12 @@ class ApartmentFilter(filters.FilterSet):
     max_apart_area = filters.NumberFilter(field_name='apartment_area', lookup_expr='gte')
 
     class Meta:
-        model = models.Apartment
+        model = Apartment
         fields = ['adv_type', 'room_count', 'min_price', 'max_price', 'max_price', 'min_apart_area', 'max_apart_area',
                   'apartment_type', 'settlement_type', 'apartment_status', 'owner']
 
 
 class ContactListFilter(filters.FilterSet):
-
     class Meta:
-        model = models.Contact
-        fields = ['user']
+        model = User
+        fields = ['phone']
