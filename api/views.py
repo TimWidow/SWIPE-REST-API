@@ -57,6 +57,7 @@ class RegistrationAPIView(APIView):
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
 def authenticate_user(request):
+    print(request.data)
     try:
         email = request.data['email']
         password = request.data['password']
