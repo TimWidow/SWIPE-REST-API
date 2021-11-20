@@ -25,7 +25,7 @@ django-phonenumber-field==6.0.0
 django-solo==1.2.0
 django-templated-mail==1.1.1
 djangorestframework==3.12.4
-djangorestframework-simplejwt==5.0.0
+djangorestframework-jwt==1.11.0
 docutils==0.18
 drf-firebase-token-auth==0.2.1
 drf-yasg==1.20.0
@@ -75,7 +75,7 @@ pycparser==2.21
 pycryptodome==3.11.0
 pydotplus==2.0.2
 Pygments==2.10.0
-PyJWT==2.3.0
+PyJWT==1.7.1
 pyotp==2.6.0
 pyparsing==3.0.6
 Pyrebase4==4.5.0
@@ -92,9 +92,7 @@ ruamel.yaml.clib==0.2.6
 sh==1.14.2
 six==1.16.0
 social-auth-app-django==5.0.0
-social-auth-core==4.1.0
 sqlparse==0.4.2
-twilio==7.3.1
 uritemplate==4.1.1
 urllib3==1.26.7
 virtualenv==20.10.0
