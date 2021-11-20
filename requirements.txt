@@ -77,7 +77,6 @@ Pygments==2.10.0
 PyJWT==2.3.0
 pyotp==2.6.0
 pyparsing==3.0.6
-pypiwin32==223
 Pyrebase4==4.5.0
 python-jwt==3.3.1
 python3-openid==3.2.0
