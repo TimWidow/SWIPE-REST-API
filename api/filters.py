@@ -5,13 +5,13 @@ from .models import Apartment, User
 class ApartmentFilter(filters.FilterSet):
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
-    min_apart_area = filters.NumberFilter(field_name='apartment_area', lookup_expr='gte')
-    max_apart_area = filters.NumberFilter(field_name='apartment_area', lookup_expr='gte')
+    min_apart_area = filters.NumberFilter(field_name='apart_area', lookup_expr='gte')
+    max_apart_area = filters.NumberFilter(field_name='apart_area', lookup_expr='gte')
 
     class Meta:
         model = Apartment
-        fields = ['adv_type', 'room_count', 'min_price', 'max_price', 'max_price', 'min_apart_area', 'max_apart_area',
-                  'apartment_type', 'settlement_type', 'apartment_status', 'owner']
+        fields = ['rooms', 'min_price', 'max_price', 'min_apart_area', 'max_apart_area',
+                  'apart_type', 'apart_status', 'apart_class', 'payment', 'owner']
 
 
 class ContactListFilter(filters.FilterSet):

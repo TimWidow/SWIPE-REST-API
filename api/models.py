@@ -1,44 +1,42 @@
 from datetime import datetime, timedelta
 import jwt
 from django.contrib.auth.models import AbstractUser
-from django.db.models import Model, ForeignKey, CASCADE, \
-    EmailField, ImageField, BooleanField, DateTimeField, CharField, FloatField, \
-    FileField, TextField, IntegerField
-from django.utils.translation import gettext_lazy as _
+from django.db.models import *
 from phonenumber_field.modelfields import PhoneNumberField
 from swipe import settings
 
 
 class User(AbstractUser):
-
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ["username"]
 
     NOTIFY = (
-        ('ME', _('Мне')),
-        ('MEANDAGENT', _('Мне и агенту')),
-        ('AGENT', _('Агенту')),
-        ('OFF', _('Отключить'))
+        ('ME', 'Мне'),
+        ('MEANDAGENT', 'Мне и агенту'),
+        ('AGENT', 'Агенту'),
+        ('OFF', 'Отключить')
     )
     ROLES = (
-        ('USER', _('Клиент')),
-        ('AGENT', _('Агент')),
-        ('NOTARY', _('Нотариус')),
-        ('DEPART', _('Отдел продаж')),
-        ('SYSTEM', _('Администрация Swipe'))
+        ('USER', 'Клиент'),
+        ('AGENT', 'Агент'),
+        ('NOTARY', 'Нотариус'),
+        ('DEPART', 'Отдел продаж'),
+        ('SYSTEM', 'Администрация Swipe')
     )
-    phone = PhoneNumberField(_('phone'), unique=True, region='UA')
-    verified = BooleanField(default=False)
-    email = EmailField(_('email address'), unique=True)
-    avatar = ImageField('Аватар', upload_to='images/user/', blank=True, null=True)
-    subscribe = BooleanField(default=False)
-    subscribe_expired = DateTimeField(blank=True, null=True)
-    notification = CharField(max_length=10, choices=NOTIFY, default='ME')
-    role = CharField(max_length=8, choices=ROLES, default='USER')
-    agent_first_name = CharField(_('agent first name'), max_length=150, blank=True)
-    agent_last_name = CharField(_('agent last name'), max_length=150, blank=True)
-    agent_email = EmailField(blank=True, null=True)
-    agent_phone = PhoneNumberField(region='UA', blank=True, null=True)
+    first_name = CharField(max_length=150, blank=True, verbose_name='Имя')
+    last_name = CharField(max_length=150, blank=True, verbose_name='Фамилия')
+    phone = PhoneNumberField(unique=True, region='UA', verbose_name='Телефон')
+    verified = BooleanField(default=False, verbose_name='Верификация пройдена')
+    email = EmailField(unique=True, verbose_name='Email')
+    role = CharField(max_length=6, choices=ROLES, default='USER', verbose_name='Роль')
+    avatar = ImageField(upload_to='images/user/', blank=True, null=True, verbose_name='Фото профиля')
+    agent_first_name = CharField(max_length=150, blank=True, verbose_name='Имя агента')
+    agent_last_name = CharField(max_length=150, blank=True, verbose_name='Фамилия агента')
+    agent_phone = PhoneNumberField(region='UA', blank=True, null=True, verbose_name='Телефон агента')
+    agent_email = EmailField(blank=True, null=True, verbose_name='Email агента')
+    subscription_date = DateTimeField(blank=True, null=True, verbose_name='Дата окончания подписки')
+    notifications = CharField(max_length=10, choices=NOTIFY, default='ME', verbose_name='Уведомления')
+    switch = BooleanField(default=False, verbose_name='Переключить звонки и сообщения на агента')
 
     @property
     def token(self):
@@ -56,82 +54,128 @@ class User(AbstractUser):
 
     class Meta:
         app_label = 'api'
+        verbose_name = "Пользователя"
+        verbose_name_plural = "Пользователи"
 
 
 class House(Model):
-    HOUSE_CURRENT_STATUS = (
-        ('Сдан', 'Сдан'),
-        ('Не сдан', 'Не сдан')
+    PROPERTY_TYPE = (
+        ('SECONDARY', 'Вторичный рынок'),
+        ('NEW', 'Новостройки'),
+        ('COTTAGE', 'Коттедж'),
+    )
+    HOUSE_LEASED = (
+        ('LEASED', 'Сдан'),
+        ('NOT LEASED', 'Не сдан')
     )
     HOUSE_STATUS = (
-        ('Квартиры', 'Квартиры'),
-        ('Офис', 'Офис'),
-    )
-    BUILDING_TECHNOLOGY = (
-        ('Монолитный каркас с керамзитом', 'Монолитный каркас с керамзитом'),
-        ('Панельные', 'Панельные')
+        ('ECO', 'Эконом'),
+        ('COMFORT', 'Комфорт'),
+        ('COMFORT', 'Бизнес'),
+        ('ELITE', 'Элитный'),
     )
     HOUSE_TYPE = (
-        ('Многоквартирный', 'Многоквартирный'),
-        ('Частный', 'Частный')
+        ('MULTI', 'Многоквартирный'),
+        ('PRIVATE', 'Частный')
     )
-    HOUSE_TERRITORY_TYPE = (
-        ('Закрытая, охраняемая', 'Закрытая, охраняемая'),
-        ('Открытая', 'Открытая')
+    TECHNOLOGY = (
+        ('MONO', 'Монолитный каркас с керамзитно-блочным заполнением'),
+        ('PANEL', 'Панельный'),
+        ('BRICK', 'Кирпич')
     )
-    INVOICE_TYPE = (
-        ('Платежи', 'Платежи'),
-        ('Автоплатеж', 'Автоплатеж')
+
+    TERRITORY = (
+        ('CLOSED', 'Закрытая'),
+        ('OPEN', 'Открытая')
     )
-    HEATING_TYPE = (
-        ('Центральное', 'Центральное'),
-        ('Личное', 'Личное')
+    HEATING = (
+        ('CENTRAL', 'Центральное'),
+        ('PERSONAL', 'Индивидуальное')
     )
-    WATER_TYPE = (
-        ('Канализация', 'Канализация'),
-        ('Яма', 'Яма')
+    SEWERAGE = (
+        ('CENTRAL', 'Центральная'),
+        ('PIT', 'Яма')
     )
-    address = CharField(max_length=255)
-    house_status = CharField(choices=HOUSE_STATUS, max_length=55)
-    building_technologies = CharField(choices=BUILDING_TECHNOLOGY, max_length=255)
-    house_type = CharField(choices=HOUSE_TYPE, max_length=255)
-    territory_type = CharField(choices=HOUSE_TERRITORY_TYPE, max_length=255)
-    current_status = CharField(choices=HOUSE_CURRENT_STATUS, max_length=255)
-    distance_to_sea = FloatField()
-    registration_type = CharField(max_length=255, verbose_name='Оформление')
-    invoice_type = CharField(choices=INVOICE_TYPE, max_length=255, verbose_name='Коммунальные платежи')
-    invoice_options = CharField(max_length=255, verbose_name='Варианты расчёта')
-    purpose = CharField(max_length=255, verbose_name='Назначение')
-    contract_amount = CharField(max_length=255, verbose_name='Сумма в договоре')
-    manager = ForeignKey(User, on_delete=CASCADE, blank=True, null=True)
-    celling_height = FloatField(null=True)
-    gas = BooleanField(default=False)
-    heating = CharField(choices=HEATING_TYPE, null=True, max_length=255)
-    water = CharField(choices=WATER_TYPE, max_length=255)
+    WATER = (
+        ('SEWERAGE', 'Центральное'),
+        ('AUTO', 'Автономное')
+    )
+    title = CharField(max_length=255, verbose_name='Название')
+    address = CharField(max_length=255, verbose_name='Адрес')
+    description = TextField(blank=True, null=True, verbose_name='Инфраструктура ЖК')
+    property_type = CharField(max_length=10, choices=PROPERTY_TYPE, verbose_name='Тип недвижимости')
+    house_leased = CharField(max_length=10, choices=HOUSE_LEASED, verbose_name='Эксплуатация')
+    house_status = CharField(max_length=10, choices=HOUSE_STATUS, verbose_name='Статус ЖК')
+    house_type = CharField(max_length=10, choices=HOUSE_TYPE, verbose_name='Вид дома')
+    technology = CharField(max_length=10, choices=TECHNOLOGY, verbose_name='Технология строительства')
+    territory = CharField(max_length=10, choices=TERRITORY, verbose_name='Территория')
+    sea = FloatField(verbose_name='Расстояние до моря', blank=True, null=True)
+    ceiling = FloatField(verbose_name='Высота потолков', blank=True, null=True)
+    gas = BooleanField(default=False, verbose_name='Газ')
+    electricity = BooleanField(default=False, verbose_name='Электричество')
+    heating = CharField(max_length=8, choices=HEATING, null=True, verbose_name='Отопление')
+    sewerage = CharField(max_length=8, choices=SEWERAGE, verbose_name='Канализация')
+    water = CharField(max_length=8, choices=WATER, verbose_name='Водоснабжение')
+    doc_options = CharField(max_length=255, blank=True, null=True, verbose_name='Варианты оформления')
+    pay_options = CharField(max_length=255, blank=True, null=True, verbose_name='Варианты расчёта')
+    status = CharField(max_length=255, blank=True, null=True, verbose_name='Статус недвижимости')
+    contract_amount = CharField(max_length=255, blank=True, null=True, verbose_name='Сумма в договоре')
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Дом"
+        verbose_name_plural = "Дома"
 
 
-class Document(Model):
-    file = FileField(upload_to='file/')
-    house = ForeignKey(House, on_delete=CASCADE)
+class HouseDoc(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    file = FileField(upload_to='documents/', verbose_name='Файл')
+
+    def __str__(self):
+        return str(self.house)
+
+    class Meta:
+        verbose_name = "Документ"
+        verbose_name_plural = "Документы"
 
 
-class HouseNews(Model):
+class HouseNew(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
     title = CharField(max_length=255, verbose_name='Заголовок новости')
     description = TextField(verbose_name='Описание новости')
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+
+    def __str__(self):
+        return str(self.house) + ', ' + str(self.title)
+
+    class Meta:
+        verbose_name = "Новость"
+        verbose_name_plural = "Новости"
 
 
 class Section(Model):
     house = ForeignKey(House, on_delete=CASCADE)
-    name = CharField(max_length=255, verbose_name='Секция')
+    number = PositiveSmallIntegerField(verbose_name='Секция')
+
+    def __str__(self):
+        return str(self.house) + ', Секция ' + str(self.number)
+
+    class Meta:
+        verbose_name = "Секцию"
+        verbose_name_plural = "Секции"
 
 
 class Floor(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
-    name = CharField(max_length=255, verbose_name='Этаж')
+    number = PositiveSmallIntegerField(verbose_name='Этаж')
 
     def __str__(self):
-        return self.name
+        return str(self.section) + ', Этаж ' + str(self.number)
+
+    class Meta:
+        verbose_name = "Этаж"
+        verbose_name_plural = "Этажи"
 
 
 class Promotion(Model):
@@ -157,82 +201,114 @@ class Promotion(Model):
         ('Отдельная парковка', 'Отдельная парковка'),
     )
 
-    type = CharField(choices=PROMO_TYPE, max_length=255, null=True)
+    type = CharField(choices=PROMO_TYPE, max_length=255, null=True, verbose_name='Тип')
     phrase = CharField(choices=PHRASE, max_length=255, null=True, verbose_name='Фраза')
-    color = CharField(choices=COLOR, max_length=255, null=True)
+    color = CharField(choices=COLOR, max_length=255, null=True, verbose_name='Цвет')
+
+    def __str__(self):
+        return str(self.type) + ' , ' + str(self.phrase) + ' , ' + str(self.color)
+
+    class Meta:
+        verbose_name = "Продвижение"
+        verbose_name_plural = "Продвижение"
 
 
 class Apartment(Model):
     DOC_TYPE = (
-        ('Документ собственности', 'Документ собственности'),
-        ('Доверенность', 'Доверенность')
+        ('OWNERSHIP', 'Документ собственности'),
+        ('POA', 'Доверенность')
     )
     APART_TYPE = (
-        ('Апартаменты', 'Апартаменты'),
-        ('Пентхаус', 'Пентхаус')
+        ('APARTMENT', 'Апартаменты'),
+        ('PENTHOUSE', 'Пентхаус')
     )
     APART_STATUS = (
-        ('Черновая отделка', 'Черновая отделка'),
-        ('Требует ремонта', 'Требует ремонта'),
-        ('Требуется капитальный ремонт', 'Требуется капитальный ремонт'),
+        ('SHELL', 'Черновая'),
+        ('EURO', 'Евроремонт'),
+        ('REPAIR', 'Требует ремонта'),
+        ('FULL REPAIR', 'Требуется капитальный ремонт'),
+    )
+    APART_LAYOUT = (
+        ('STUDIO', 'Студия, санузел'),
+        ('GUEST', 'Гостинка'),
+        ('SMALL', 'Малосемейка'),
+        ('ISOLATED', 'Изолированные комнаты'),
+        ('ADJOINING', 'Смежные комнаты'),
+        ('FREE', 'Свободная планировка'),
     )
     HEATING_TYPE = (
-        ('Газовое', 'Газовое'),
-        ('Дрова', 'Дрова')
+        ('GAS', 'Газовое'),
+        ('WOOD', 'Дрова')
     )
-    SETTLEMENT_TYPE = (
-        ('Мат. капитал', 'Мат. капитал'),
-        ('Ипотека', 'Ипотека')
+    PAY_TYPE = (
+        ('CAPITAL', 'Мат. капитал'),
+        ('MORTGAGE', 'Ипотека'),
+        ('C&M', 'Мат. капитал, Ипотека'),
     )
     CONTACT_TYPE = (
-        ('Звонок', 'Звонок'),
-        ('Звонок + сообщение', 'Звонок + сообщение')
-    )
-    ADV_TYPE = (
-        ('Первичный рынок', 'Первичный рынок'),
-        ('Вторичный рынок', 'Вторичный рынок')
-    )
-    APART_CLASS = (
-        ('Студия', 'Студия'),
-        ('Студия, санузел', 'Студия, санузел')
+        ('CALL', 'Звонок'),
+        ('CALL&MESSAGE', 'Звонок + сообщение')
     )
 
     house = ForeignKey(House, on_delete=CASCADE, null=True, verbose_name='ЖК')
     floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
-    document = CharField(choices=DOC_TYPE, max_length=255, verbose_name='Документ')
-    room_count = IntegerField(verbose_name='Количество комнат')
-    apartment_type = CharField(choices=APART_TYPE, max_length=255, verbose_name='Аппартаменты')
-    apartment_status = CharField(choices=APART_STATUS, max_length=255, verbose_name='Жилое состояние')
-    apartment_area = FloatField(verbose_name='Площадь квартиры')
+    document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
+    rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
+    apart_type = CharField(max_length=9, choices=APART_TYPE, verbose_name='Назначение')
+    apart_status = CharField(max_length=11, choices=APART_STATUS, verbose_name='Жилое состояние')
+    apart_class = CharField(max_length=9, choices=APART_LAYOUT, verbose_name='Планировка')
+    apart_area = FloatField(verbose_name='Общая площадь')
     kitchen_area = FloatField(verbose_name='Площадь кухни')
     loggia = BooleanField(default=False, verbose_name='Балкон/лоджия')
-    heating_type = CharField(choices=HEATING_TYPE, max_length=255)
-    settlement_type = CharField(choices=SETTLEMENT_TYPE, max_length=255)
-    contact = CharField(choices=CONTACT_TYPE, max_length=255)
-    promotion = ForeignKey(Promotion, on_delete=CASCADE, blank=True, null=True)
-    commission = IntegerField()
-    description = TextField()
-    price = IntegerField()
-    main_image = ImageField(upload_to='image/')
-    address = CharField(max_length=255)
-    adv_type = CharField(choices=ADV_TYPE, max_length=255)
-    apart_class = CharField(choices=APART_CLASS, max_length=255)
-    is_actual = BooleanField(default=False)
-    owner = ForeignKey(User, on_delete=CASCADE, verbose_name='Владелец объявления', blank=True, null=True)
-    created_date = DateTimeField(auto_now=True, null=True)
+    heating = CharField(max_length=4, choices=HEATING_TYPE, verbose_name='Отопление')
+    payment = CharField(max_length=8, choices=PAY_TYPE, verbose_name='Варианты расчёта')
+    contact = CharField(max_length=12, choices=CONTACT_TYPE, verbose_name='Способ связи')
+    promotion = ForeignKey(Promotion, on_delete=CASCADE, blank=True, null=True, verbose_name='Продвижение')
+    commission = FloatField(verbose_name='Комиссия агенту')
+    description = TextField(verbose_name='Описание')
+    price = FloatField(verbose_name='Цена')
+    is_actual = BooleanField(default=False, verbose_name='Актуально')
+    owner = ForeignKey(User, on_delete=CASCADE, blank=True, null=True, verbose_name='Владелец объявления')
+    created = DateTimeField(auto_now=True, null=True)
+
+    def __str__(self):
+        return str(self.floor)
+
+    class Meta:
+        verbose_name = "Квартиру"
+        verbose_name_plural = "Квартиры"
 
 
-class ApartImgRelations(Model):
-    apart = ForeignKey(Apartment, on_delete=CASCADE)
-    image = ImageField(upload_to='image/')
+class HouseImg(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    image = ImageField(upload_to='houses/', verbose_name='Фото')
+
+    def __str__(self):
+        return str(self.house)
+
+    class Meta:
+        verbose_name = "Фото дома"
+        verbose_name_plural = "Фото дома"
 
 
-class UserApartRelation(Model):
+class ApartImg(Model):
+    apart = ForeignKey(Apartment, on_delete=CASCADE, verbose_name='Квартира')
+    image = ImageField(upload_to='apartments/', verbose_name='Фото')
+
+    def __str__(self):
+        return str(self.apart)
+
+    class Meta:
+        verbose_name = "Фото квартиры"
+        verbose_name_plural = "Фото квартиры"
+
+
+class UserApart(Model):
     user = ForeignKey(User, on_delete=CASCADE)
     apart = ForeignKey(Apartment, on_delete=CASCADE)
 
 
 class Message(Model):
-    sender = ForeignKey(User, on_delete=CASCADE, related_name='related_sender')
-    recipient = ForeignKey(User, on_delete=CASCADE, related_name='related_recipient')
+    sender = ForeignKey(User, on_delete=CASCADE, related_name='sender')
+    recipient = ForeignKey(User, on_delete=CASCADE, related_name='recipient')
     text = TextField()

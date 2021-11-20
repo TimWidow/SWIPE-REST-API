@@ -28,21 +28,26 @@ class Login(BoxLayout):
             'password': password
         }
         response = requests.post(url=self.ws_url, data=json.dumps(params), headers=headers)
+        print(response)
         print(response.text)
+
         if response.status_code == 200:
             token_dict = json.loads(response.text)
             self.save_token(str=token_dict['token'])
             ws_req = WSRequests()
             user_response = ws_req.get_ws_data(
                 action_url='http://127.0.0.1:8000/api/login/',
-                params={'username': login}
+                params={'username': email}
             )
+            print(user_response)
+            print(user_response.text)
+
             if user_response.resp_status == 403:
                 print('Доступ запрещён')
             else:
                 app = App.get_running_app()
                 app.root_window.remove_widget(app.root)
-                home_window = Home(username=login, login_window=self)
+                home_window = Home(username=email, login_window=self)
                 app.root_window.add_widget(home_window)
         else:
             print(f'Неправильное имя пользователя или пароль')
