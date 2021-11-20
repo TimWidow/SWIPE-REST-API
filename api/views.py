@@ -61,8 +61,6 @@ def authenticate_user(request):
     try:
         email = request.data['email']
         password = request.data['password']
-        print(email, password)
-
         user = auth.EmailAuthBackend.authenticate(email=email, password=password)
         if user:
             try:
