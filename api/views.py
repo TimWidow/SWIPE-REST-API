@@ -66,15 +66,17 @@ def authenticate_user(request):
         if user:
             try:
                 payload = jwt_payload_handler(user)
-                token = jwt.encode(payload)
+                print(payload)
+                token = jwt.encode(payload, settings.SECRET_KEY)
                 user_details = {'name': (
                     user.first_name), 'token': token}
                 user_logged_in.send(sender=user.__class__,
                                     request=request, user=user)
                 return Response(user_details, status=status.HTTP_200_OK)
 
-            except Exception as e:
-                raise e
+            except Exception as error:
+                print(error)
+                raise error
         else:
             res = {
                 'error': 'can not authenticate with the given credentials or the account has been deactivated'}

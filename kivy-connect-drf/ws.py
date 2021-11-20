@@ -1,13 +1,4 @@
 # coding: utf-8
-
-# ######################### #
-#                           #
-# Autor: Jorge Dominguez    #
-#                           #
-# MandarinaSoft - 2018      #
-#                           #
-# ######################### #
-
 import requests
 import json
 import os

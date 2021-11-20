@@ -40,7 +40,6 @@ class Login(BoxLayout):
                 params={'username': email}
             )
             print(user_response)
-            print(user_response.text)
 
             if user_response.resp_status == 403:
                 print('Доступ запрещён')
@@ -52,6 +51,7 @@ class Login(BoxLayout):
         else:
             print(f'Неправильное имя пользователя или пароль')
 
-    def save_token(self, str):
+    @staticmethod
+    def save_token(str):
         with open('token', 'w') as outfile:
             outfile.write(str)

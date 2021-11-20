@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models import *
 from phonenumber_field.modelfields import PhoneNumberField
 from swipe import settings
+from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
@@ -47,15 +48,13 @@ class User(AbstractUser):
 
         token = jwt.encode({
             'id': self.pk,
-            'exp': int(dt.strftime('%s'))
+            'exp': dt.utcfromtimestamp(dt.timestamp())
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token.decode('utf-8')
 
     class Meta:
         app_label = 'api'
-        verbose_name = "Пользователя"
-        verbose_name_plural = "Пользователи"
 
 
 class House(Model):
@@ -124,10 +123,6 @@ class House(Model):
     def __str__(self):
         return self.title
 
-    class Meta:
-        verbose_name = "Дом"
-        verbose_name_plural = "Дома"
-
 
 class HouseDoc(Model):
     house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
@@ -135,10 +130,6 @@ class HouseDoc(Model):
 
     def __str__(self):
         return str(self.house)
-
-    class Meta:
-        verbose_name = "Документ"
-        verbose_name_plural = "Документы"
 
 
 class HouseNew(Model):
@@ -149,10 +140,6 @@ class HouseNew(Model):
     def __str__(self):
         return str(self.house) + ', ' + str(self.title)
 
-    class Meta:
-        verbose_name = "Новость"
-        verbose_name_plural = "Новости"
-
 
 class Section(Model):
     house = ForeignKey(House, on_delete=CASCADE)
@@ -161,10 +148,6 @@ class Section(Model):
     def __str__(self):
         return str(self.house) + ', Секция ' + str(self.number)
 
-    class Meta:
-        verbose_name = "Секцию"
-        verbose_name_plural = "Секции"
-
 
 class Floor(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
@@ -172,10 +155,6 @@ class Floor(Model):
 
     def __str__(self):
         return str(self.section) + ', Этаж ' + str(self.number)
-
-    class Meta:
-        verbose_name = "Этаж"
-        verbose_name_plural = "Этажи"
 
 
 class Promotion(Model):
@@ -207,10 +186,6 @@ class Promotion(Model):
 
     def __str__(self):
         return str(self.type) + ' , ' + str(self.phrase) + ' , ' + str(self.color)
-
-    class Meta:
-        verbose_name = "Продвижение"
-        verbose_name_plural = "Продвижение"
 
 
 class Apartment(Model):
@@ -256,7 +231,7 @@ class Apartment(Model):
     rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
     apart_type = CharField(max_length=9, choices=APART_TYPE, verbose_name='Назначение')
     apart_status = CharField(max_length=11, choices=APART_STATUS, verbose_name='Жилое состояние')
-    apart_class = CharField(max_length=9, choices=APART_LAYOUT, verbose_name='Планировка')
+    apart_layout = CharField(max_length=9, choices=APART_LAYOUT, verbose_name='Планировка')
     apart_area = FloatField(verbose_name='Общая площадь')
     kitchen_area = FloatField(verbose_name='Площадь кухни')
     loggia = BooleanField(default=False, verbose_name='Балкон/лоджия')
@@ -274,10 +249,6 @@ class Apartment(Model):
     def __str__(self):
         return str(self.floor)
 
-    class Meta:
-        verbose_name = "Квартиру"
-        verbose_name_plural = "Квартиры"
-
 
 class HouseImg(Model):
     house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
@@ -286,10 +257,6 @@ class HouseImg(Model):
     def __str__(self):
         return str(self.house)
 
-    class Meta:
-        verbose_name = "Фото дома"
-        verbose_name_plural = "Фото дома"
-
 
 class ApartImg(Model):
     apart = ForeignKey(Apartment, on_delete=CASCADE, verbose_name='Квартира')
@@ -297,10 +264,6 @@ class ApartImg(Model):
 
     def __str__(self):
         return str(self.apart)
-
-    class Meta:
-        verbose_name = "Фото квартиры"
-        verbose_name_plural = "Фото квартиры"
 
 
 class UserApart(Model):

@@ -1,27 +1,16 @@
-from abc import ABC
-
-from django.contrib.auth import authenticate
 from . import auth
 from rest_framework import serializers
 from .models import User, House, Promotion, Apartment, Floor
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    """
-    Creates a new user.
-    Email, username, and password are required.
-    Returns a JSON web token.
-    """
 
-    # The password must be validated and should not be read by the client
     password = serializers.CharField(
         max_length=128,
         min_length=8,
         write_only=True,
     )
 
-    # The client should not be able to send a token along with a registration
-    # request. Making `token` read-only handles that for us.
     token = serializers.CharField(max_length=255, read_only=True)
 
     class Meta:
@@ -98,25 +87,23 @@ class ApartmentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Apartment
-        fields = ('id', 'main_image', 'promotion', 'price', 'address', 'created_date', 'room_count', 'apartment_area',
-                  'promotion', 'house', 'floor')
+        fields = ('house', 'floor', 'rooms', 'apart_area', 'price', 'created', 'promotion')
 
 
 class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = (
-        'id', 'main_image', 'price', 'address', 'adv_type', 'apartment_status', 'apartment_type', 'apart_class',
-        'apartment_area', 'kitchen_area', 'loggia', 'heating_type', 'settlement_type', 'commission',
-        'description', 'owner', 'promotion')
+            'house', 'floor', 'rooms', 'apart_type', 'apart_status', 'apart_layout',
+            'apart_area', 'kitchen_area', 'loggia', 'heating', 'payment', 'price', 'commission',
+            'description', 'owner', 'promotion')
 
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
-        fields = ['address', 'floor', 'price', 'document', 'apartment_type', 'room_count', 'apart_class',
-                  'apartment_status', 'apartment_area', 'kitchen_area', 'loggia', 'heating_type', 'commission',
-                  'description', 'owner']
+        fields = ['house', 'floor', 'rooms', 'document', 'apart_type', 'apart_status', 'apart_layout',
+                  'apart_area', 'kitchen_area', 'loggia', 'heating', 'commission', 'description', 'owner']
 
     def create(self, validated_data):
         return Apartment.objects.create(**validated_data)
@@ -125,13 +112,13 @@ class ApartmentCreateSerializer(serializers.ModelSerializer):
 class FloorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Floor
-        fields = ('section', 'name')
+        fields = ('section', 'number')
 
 
 class FloorCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Floor
-        fields = ['id', 'section', 'name']
+        fields = ['section', 'number']
 
     def create(self, validated_data):
         return Floor.objects.create(**validated_data)
@@ -140,7 +127,7 @@ class FloorCreateSerializer(serializers.ModelSerializer):
 class ContactListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'user', 'first_name', 'last_name']
+        fields = ['first_name', 'last_name']
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
@@ -152,14 +139,14 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'subscribe_expired', 'subscribe', 'agent_first_name',
-                  'agent_last_name', 'notification']
+        fields = ['phone', 'first_name', 'last_name', 'email', 'subscription_date',
+                  'agent_first_name', 'agent_last_name', 'agent_phone', 'notifications']
 
 
 class HouseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = House
-        fields = ['id', 'address']
+        fields = ['title', 'address']
 
 
 class ContactSerializer(serializers.ModelSerializer):

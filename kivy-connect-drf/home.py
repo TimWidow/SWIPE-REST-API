@@ -9,7 +9,7 @@ class Home(BoxLayout):
     def __init__(self, username, login_window, **kwargs):
         super(Home, self).__init__(**kwargs)
         self.username = username
-        self.ids['label_username'].text = f'Пользватель {self.username}'
+        self.ids['label_username'].text = f'Пользователь {self.username}'
         self.login_window = login_window
 
     def go_pv(self):
