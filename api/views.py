@@ -16,10 +16,6 @@ from django_filters import rest_framework as filters
 from .models import Apartment, Floor, House, User
 from .permissions import IsOwnerOrSuperuserOrReadOnly
 from datetime import datetime
-from django.core.exceptions import ObjectDoesNotExist
-import pyotp
-import base64
-from twilio.rest import Client
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
