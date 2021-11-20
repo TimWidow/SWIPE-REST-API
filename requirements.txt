@@ -1,5 +1,7 @@
 asgiref==3.4.1
+authy==2.2.6
 backports.entry-points-selectable==1.1.1
+buildozer==1.2.0
 CacheControl==0.12.10
 cachetools==4.2.4
 certifi==2021.10.8
@@ -23,6 +25,8 @@ django-phonenumber-field==6.0.0
 django-solo==1.2.0
 django-templated-mail==1.1.1
 djangorestframework==3.12.4
+djangorestframework-jwt==1.11.0
+djangorestframework-simplejwt==5.0.0
 docutils==0.18
 drf-firebase-token-auth==0.2.1
 drf-yasg==1.20.0
@@ -91,6 +95,7 @@ six==1.16.0
 social-auth-app-django==5.0.0
 social-auth-core==4.1.0
 sqlparse==0.4.2
+twilio==7.3.1
 uritemplate==4.1.1
 urllib3==1.26.7
 virtualenv==20.10.0
