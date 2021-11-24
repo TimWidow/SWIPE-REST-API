@@ -12,7 +12,7 @@ SECRET_KEY = "ql7uffku8cl)_++*-^x1&ikexbuyec2c6u-56nqr%e!#5@ych5"
 DEBUG = True
 DEBUG_TOOLBAR = False
 
-ALLOWED_HOSTS = ['188.166.95.221']
+ALLOWED_HOSTS = ['188.166.95.221', '127.0.0.1']
 
 AUTH_USER_MODEL = 'api.User'
 
@@ -69,7 +69,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'admin',
-        'HOST': 'db',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }

@@ -1,15 +1,13 @@
 # coding: utf-8
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.network.urlrequest import UrlRequest
 import requests
 import json
 
 from home import Home
 from ws import WSRequests
-from twilio.rest import Client
-from authy.api import AuthyApiClient
 
-from kivy.network.urlrequest import UrlRequest
 
 # req = UrlRequest()
 
