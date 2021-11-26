@@ -6,7 +6,7 @@ class ApartmentFilter(filters.FilterSet):
     min_price = filters.NumberFilter(field_name='price', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price', lookup_expr='lte')
     min_apart_area = filters.NumberFilter(field_name='apart_area', lookup_expr='gte')
-    max_apart_area = filters.NumberFilter(field_name='apart_area', lookup_expr='gte')
+    max_apart_area = filters.NumberFilter(field_name='apart_area', lookup_expr='lte')
 
     class Meta:
         model = Apartment
