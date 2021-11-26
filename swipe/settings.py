@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from django.conf import settings
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_ROOT = Path(__file__).resolve(strict=True).parent
@@ -26,6 +27,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_filters',
     'rest_framework',
+    'phone_verify',
     'drf_yasg',
     'easy_maps',
     'api'
@@ -169,3 +171,22 @@ if DEBUG_TOOLBAR:
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
 AUTHY_API_KEY = '8FDRj4VX0UO2b8BChgl7J7khVDXnDzJi'
+
+# Settings for phone_verify
+PHONE_VERIFICATION = {
+    'BACKEND': 'phone_verify.backends.twilio.TwilioBackend',
+    'TWILIO_SANDBOX_TOKEN': '123456',
+    'OPTIONS': {
+        'SID': 'fake',
+        'SECRET': 'fake',
+        'FROM': '+14755292729'
+    },
+    'TOKEN_LENGTH': 6,
+    'MESSAGE': 'Welcome to {app}! Please use security code {otp} to proceed.',
+    'APP_NAME': 'Phone Verify',
+    'OTP_EXPIRATION_TIME': 3600  # In seconds only
+}
+
+TWILIO_PHONE = config('TWILIO_PHONE', default=None)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default=None)
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default=None)

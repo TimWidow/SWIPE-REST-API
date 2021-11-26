@@ -1,10 +1,13 @@
 import jwt
+import pyotp
 from authy.api import AuthyApiClient
+from decouple import config
 from django.contrib.auth import user_logged_in
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_jwt.serializers import jwt_payload_handler
+from twilio.rest import TwilioClient
 
 from swipe import settings
 from . import models, auth
@@ -23,6 +26,11 @@ from rest_framework.views import APIView
 from .serializers import RegistrationSerializer, HouseDetailSerializer, HouseListSerializer, PromotionSerializer, \
     UserSerializer, ContactSerializer, ContactCreateSerializer, ContactListSerializer, ApartmentListSerializer, \
     FloorCreateSerializer, ApartmentCreateSerializer, ApartmentDetailSerializer
+
+account_sid = config('TWILIO_ACCOUNT_SID')
+auth_token = config("TWILIO_AUTH_TOKEN")
+twilio_phone = config("TWILIO_PHONE")
+client = TwilioClient(account_sid, auth_token)
 
 
 class RegistrationAPIView(APIView):
@@ -115,6 +123,32 @@ class PhoneNumberRegistered(APIView):
     @staticmethod
     def get(phone):
         authy_api = AuthyApiClient(settings.AUTHY_API_KEY)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def send_sms_code(request):
+    # Time based otp
+    time_otp = pyotp.TOTP(request.user.key, interval=300)
+    time_otp = time_otp.now()
+    user_phone_number = request.user.phone  # Must start with a plus '+'
+    client.messages.create(
+        body="Your verification code is " + time_otp,
+        from_=twilio_phone,
+        to=user_phone_number
+    )
+    return Response(status=200)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_phone(request, sms_code):
+    code = int(sms_code)
+    if request.user.authenticate(code):
+        request.user.verified = True
+        request.user.save()
+        return Response(dict(detail="Phone number verified successfully"), status=201)
+    return Response(dict(detail='The provided code did not match or has expired'), status=200)
 
 
 class ApartmentList(generics.ListAPIView):

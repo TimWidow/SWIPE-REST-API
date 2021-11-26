@@ -1,10 +1,10 @@
 from . import auth
 from rest_framework import serializers
+from phone_verify.serializers import SMSVerificationSerializer
 from .models import User, House, Promotion, Apartment, Floor
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
-
+class RegistrationSerializer(serializers.ModelSerializer, SMSVerificationSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
@@ -23,7 +23,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(serializers.Serializer, SMSVerificationSerializer):
     """
     Authenticates an existing user.
     Email and password are required.

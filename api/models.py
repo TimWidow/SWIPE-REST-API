@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import jwt
+import pyotp
 from django.contrib.auth.models import AbstractUser
 from django.db.models import *
 from phonenumber_field.modelfields import PhoneNumberField
@@ -26,6 +27,7 @@ class User(AbstractUser):
     first_name = CharField(max_length=150, blank=True, verbose_name='Имя')
     last_name = CharField(max_length=150, blank=True, verbose_name='Фамилия')
     phone = PhoneNumberField(unique=True, region='UA', verbose_name='Телефон')
+    key = CharField(max_length=100, unique=True, blank=True)
     verified = BooleanField(default=False, verbose_name='Верификация пройдена')
     email = EmailField(unique=True, verbose_name='Email')
     role = CharField(max_length=6, choices=ROLES, default='USER', verbose_name='Роль')
@@ -41,6 +43,13 @@ class User(AbstractUser):
     @property
     def token(self):
         return self._generate_jwt_token()
+
+    def authenticate(self, otp):
+        """ This method authenticates the given otp"""
+        # Here we are using Time Based OTP. The interval is 300 seconds.
+        # otp must be provided within this interval or it's invalid
+        token = pyotp.TOTP(self.key, interval=300)
+        return token.verify(otp)
 
     def _generate_jwt_token(self):
         dt = datetime.now() + timedelta(days=1)
