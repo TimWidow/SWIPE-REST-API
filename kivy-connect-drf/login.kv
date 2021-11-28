@@ -15,7 +15,7 @@
             orientation: 'vertical'
 
             Label:
-                text: 'Login'
+                text: 'Введите Ваш номер телефона'
                 font_size: 18
                 halign: 'left'
                 text_size: root.width-20, 20
@@ -23,20 +23,6 @@
             TextInput:
                 id: login
                 multiline:False
-                font_size: 28
-
-        BoxLayout:
-            orientation: 'vertical'
-            Label:
-                text: 'Password'
-                halign: 'left'
-                font_size: 18
-                text_size: root.width-20, 20
-
-            TextInput:
-                id: password
-                multiline: False
-                password: True
                 font_size: 28
 
         BoxLayout:
@@ -48,7 +34,7 @@
                 size_hint: 0.5, 0.5
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 background_color: (1, 153, 153, 1)
-                on_press: root.do_login(login.text, password.text)
+                on_press: root.do_login(login.text)
 
             Button:
                 text: 'Отмена'

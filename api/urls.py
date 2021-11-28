@@ -1,4 +1,7 @@
-from django.urls import path
+from django.contrib.auth.views import LogoutView
+from django.urls import path, include
+from django.views.generic import TemplateView
+
 from . import views
 from rest_framework import routers
 
@@ -6,12 +9,13 @@ router = routers.SimpleRouter()
 
 
 urlpatterns = [
-    path('registration/', views.RegistrationAPIView.as_view(), name='user_registration'),
-    path('login/', views.authenticate_user, name='user_login'),
-    path('update/', views.UserRetrieveUpdateAPIView, name='user_update'),
-    path('send_sms_code/', views.send_sms_code),
-    path('verify_phone/<int:sms_code>', views.verify_phone),
-    path('verificate/<phone>/', views.PhoneNumberRegistered.as_view(), name="phone-login"),
+    path('google_login/', TemplateView.as_view(template_name="index.html")),
+    path('google_accounts/', include('allauth.urls')),
+    path('google_logout/', LogoutView.as_view()),
+    path('registration/', views.RegistrationAPIView.as_view(), name='registration'),
+    path('login/', views.authenticate_by_phone, name='phone_login'),
+    path('send/', views.send_sms, name='sms'),
+    path('login_email/', views.authenticate_by_email, name='email_login'),
     path('apartment/', views.ApartmentList.as_view(), name='apartment-list'),
     path('apartment/<int:pk>/', views.ApartmentDetail.as_view(), name='apartment-detail'),
     path('apartment/create/', views.ApartmentCreate.as_view(), name='apartment-create'),

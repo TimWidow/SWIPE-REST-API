@@ -27,7 +27,6 @@ class User(AbstractUser):
     first_name = CharField(max_length=150, blank=True, verbose_name='Имя')
     last_name = CharField(max_length=150, blank=True, verbose_name='Фамилия')
     phone = PhoneNumberField(unique=True, region='UA', verbose_name='Телефон')
-    key = CharField(max_length=100, unique=True, blank=True)
     verified = BooleanField(default=False, verbose_name='Верификация пройдена')
     email = EmailField(unique=True, verbose_name='Email')
     role = CharField(max_length=6, choices=ROLES, default='USER', verbose_name='Роль')

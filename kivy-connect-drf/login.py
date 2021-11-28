@@ -17,13 +17,12 @@ from ws import WSRequests
 
 
 class Login(BoxLayout):
-    ws_url = 'http://127.0.0.1:8000/api/login/'
+    ws_url = 'http://127.0.0.1:8000/api/send/'
 
-    def do_login(self, email, password):
+    def do_login(self, phone):
         headers = {'content-type': 'application/json'}
         params = {
-            'email': email,
-            'password': password
+            'phone': phone,
         }
         response = requests.post(url=self.ws_url, data=json.dumps(params), headers=headers)
         print(response)
@@ -35,7 +34,8 @@ class Login(BoxLayout):
             ws_req = WSRequests()
             user_response = ws_req.get_ws_data(
                 action_url='http://127.0.0.1:8000/api/login/',
-                params={'username': email}
+                params={'phone': phone,
+                        'code': code}
             )
             print(user_response)
 
@@ -44,7 +44,7 @@ class Login(BoxLayout):
             else:
                 app = App.get_running_app()
                 app.root_window.remove_widget(app.root)
-                home_window = Home(username=email, login_window=self)
+                home_window = Home(username=phone, login_window=self)
                 app.root_window.add_widget(home_window)
         else:
             print(f'Неправильное имя пользователя или пароль')

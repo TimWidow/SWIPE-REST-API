@@ -22,8 +22,8 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-default_router = DefaultRouter(trailing_slash=False)
-default_router.register('phone', VerificationViewSet, basename='phone')
+# default_router = DefaultRouter(trailing_slash=False)
+# default_router.register('phone', VerificationViewSet, basename='phone')
 
 urlpatterns = [
                   path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
@@ -32,4 +32,4 @@ urlpatterns = [
                   path('api-auth/', include('rest_framework.urls')),  # For logins
                   path('admin/', admin.site.urls),
                   path('__debug__/', include(debug_toolbar.urls)),
-              ] + static(MEDIA_URL, document_root=MEDIA_ROOT) + default_router.urls
+              ] + static(MEDIA_URL, document_root=MEDIA_ROOT)  # + default_router.urls

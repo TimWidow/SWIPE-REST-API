@@ -10,27 +10,19 @@ from rest_framework_jwt.serializers import jwt_payload_handler
 from twilio.rest import TwilioClient
 
 from swipe import settings
-from . import models, auth
+from . import models
 from . import serializers
 from . import filters as my_filter
 from rest_framework import generics
 from django_filters import rest_framework as filters
-
-from .models import Apartment, Floor, House, User
 from .permissions import IsOwnerOrSuperuserOrReadOnly
 from datetime import datetime
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import RegistrationSerializer, HouseDetailSerializer, HouseListSerializer, PromotionSerializer, \
-    UserSerializer, ContactSerializer, ContactCreateSerializer, ContactListSerializer, ApartmentListSerializer, \
-    FloorCreateSerializer, ApartmentCreateSerializer, ApartmentDetailSerializer
-
-account_sid = config('TWILIO_ACCOUNT_SID')
-auth_token = config("TWILIO_AUTH_TOKEN")
-twilio_phone = config("TWILIO_PHONE")
-client = TwilioClient(account_sid, auth_token)
+from .serializers import *
+from .verify import send, check
 
 
 class RegistrationAPIView(APIView):
@@ -60,7 +52,7 @@ class RegistrationAPIView(APIView):
 
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
-def authenticate_user(request):
+def authenticate_by_email(request):
     print(request.data)
     try:
         email = request.data['email']
@@ -89,66 +81,43 @@ def authenticate_user(request):
         return Response(res)
 
 
-class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    # Allow only authenticated users to access this url
-    permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.UserSerializer
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+def send_sms(request):
+    print(request.data)
+    phone = request.data['phone']
+    send(phone)
+    return Response(status=status.HTTP_200_OK)
 
-    def get(self, request, *args, **kwargs):
-        # serializer to handle turning our `User` object into something that
-        # can be JSONified and sent to the client.
-        serializer = self.serializer_class(request.user)
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+def authenticate_by_phone(request):
+    print(request.data)
+    try:
+        phone = request.data['phone']
+        user = auth.PhoneAuthBackend.authenticate(phone=phone)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if user:
+            try:
+                payload = jwt_payload_handler(user)
+                print(payload)
+                token = jwt.encode(payload, settings.SECRET_KEY)
+                user_details = {'name': (
+                    user.first_name), 'token': token}
+                user_logged_in.send(sender=user.__class__,
+                                    request=request, user=user)
+                return Response(user_details, status=status.HTTP_200_OK)
 
-    def put(self, request, *args, **kwargs):
-        serializer_data = request.data.get('user', {})
-
-        serializer = serializers.UserSerializer(
-            request.user, data=serializer_data, partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class GenerateKey:
-    @staticmethod
-    def return_value(phone):
-        return str(phone) + str(datetime.date(datetime.now())) + "Some Random Secret Key"
-
-
-class PhoneNumberRegistered(APIView):
-    @staticmethod
-    def get(phone):
-        authy_api = AuthyApiClient(settings.AUTHY_API_KEY)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def send_sms_code(request):
-    # Time based otp
-    time_otp = pyotp.TOTP(request.user.key, interval=300)
-    time_otp = time_otp.now()
-    user_phone_number = request.user.phone  # Must start with a plus '+'
-    client.messages.create(
-        body="Your verification code is " + time_otp,
-        from_=twilio_phone,
-        to=user_phone_number
-    )
-    return Response(status=200)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def verify_phone(request, sms_code):
-    code = int(sms_code)
-    if request.user.authenticate(code):
-        request.user.verified = True
-        request.user.save()
-        return Response(dict(detail="Phone number verified successfully"), status=201)
-    return Response(dict(detail='The provided code did not match or has expired'), status=200)
+            except Exception as error:
+                print(error)
+                raise error
+        else:
+            res = {
+                'error': 'can not authenticate with the given credentials or the account has been deactivated'}
+            return Response(res, status=status.HTTP_403_FORBIDDEN)
+    except KeyError:
+        res = {'error': 'please provide a email and a password'}
+        return Response(res)
 
 
 class ApartmentList(generics.ListAPIView):

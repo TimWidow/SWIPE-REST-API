@@ -1,9 +1,8 @@
-import os
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
-client = Client(os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'])
-verify = client.verify.services(os.environ['TWILIO_VERIFY_SERVICE_SID'])
+client = Client('AC480fdde57f3414684e58bdd13318d15a', '6ee15750966fa4e4cde998bed1855a36')
+verify = client.verify.services('VA862953786dba5d5dd8398d14e6f0de31')
 
 
 def send(phone):
@@ -13,7 +12,11 @@ def send(phone):
 def check(phone, code):
     try:
         result = verify.verification_checks.create(to=phone, code=code)
-    except TwilioRestException:
-        print('no')
+        print(result.status)
+    except TwilioRestException as error:
+        print(error)
         return False
     return result.status == 'approved'
+
+
+print(check('+380662863099', '0000'))
