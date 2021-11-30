@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from rest_framework.test import APIRequestFactory
 from django.urls import reverse
@@ -17,12 +18,14 @@ class ApartmentTestCase(APITestCase):
         self.user = models.User.objects.create(email='test@gmail.com',
                                                password='123')
         self.client.force_login(self.user)
-        self.apartment = Apartment.objects.create(document='Доверенность', room_count=1, apartment_type='Пентхаус',
-                                                  apartment_status='Требует ремонта', apartment_area=21.0,
-                                                  kitchen_area=11.0, loggia=1, heating_type='Газ', commission=112,
-                                                  description='test description', price=123213,
-                                                  address='Test address', apart_class='Студия, санузел', is_actual=0,
-                                                  created_date='2021-07-07 04:34:23.861943', owner_id=None)
+        self.apartment = Apartment.objects.create(document='OWNERSHIP', address='Test address', rooms=1,
+                                                  apart_type='APARTMENT', apart_status='SHELL',
+                                                  apart_layout='STUDIO',
+                                                  apart_area=42.0, kitchen_area=21.0, loggia=True,
+                                                  heating='GAS', payment='CAPITAL', contact='CALL',
+                                                  price=10000, commission=1000,
+                                                  description='test description', is_actual=True,
+                                                  created=datetime.now())
 
     def test_list(self):
         url = reverse('apartment-list')

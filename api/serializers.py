@@ -58,7 +58,7 @@ class LoginSerializer(serializers.Serializer):
                 'A password is required to log in.'
             )
 
-        user = auth.PhoneAuthBackend.authenticate(phone=phone, password=password)
+        user = auth.PhoneAuthBackend.authenticate(phone=phone)
 
         if user is None:
             raise serializers.ValidationError(
@@ -93,9 +93,9 @@ class ApartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apartment
         fields = (
-            'house', 'floor', 'rooms', 'apart_type', 'apart_status', 'apart_layout',
-            'apart_area', 'kitchen_area', 'loggia', 'heating', 'payment', 'price', 'commission',
-            'description', 'owner', 'promotion')
+            'house', 'floor', 'document', 'address', 'rooms', 'apart_type', 'apart_status', 'apart_layout',
+            'apart_area', 'kitchen_area', 'loggia', 'heating', 'payment', 'contact', 'promotion',
+            'commission', 'description', 'price', 'owner')
 
 
 class ApartmentCreateSerializer(serializers.ModelSerializer):

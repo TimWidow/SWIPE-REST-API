@@ -225,16 +225,18 @@ class Apartment(Model):
     PAY_TYPE = (
         ('CAPITAL', 'Мат. капитал'),
         ('MORTGAGE', 'Ипотека'),
-        ('C&M', 'Мат. капитал, Ипотека'),
+        ('CAP&MORT', 'Мат. капитал, Ипотека'),
     )
     CONTACT_TYPE = (
         ('CALL', 'Звонок'),
-        ('CALL&MESSAGE', 'Звонок + сообщение')
+        ('MESSAGE', 'Сообщение'),
+        ('CALL&MES', 'Звонок + сообщение')
     )
 
     house = ForeignKey(House, on_delete=CASCADE, null=True, verbose_name='ЖК')
     floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
     document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
+    address = CharField(max_length=255, blank=True, null=True, verbose_name='Адрес')
     rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
     apart_type = CharField(max_length=9, choices=APART_TYPE, verbose_name='Назначение')
     apart_status = CharField(max_length=11, choices=APART_STATUS, verbose_name='Жилое состояние')
