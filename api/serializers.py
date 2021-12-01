@@ -1,6 +1,3 @@
-from datetime import datetime
-
-import pytz
 from django.shortcuts import get_object_or_404
 from rest_framework.serializers import *
 from . import auth
@@ -230,11 +227,6 @@ class HouseSerializer(ModelSerializer):
     def get_full_name(obj):
         return f'Корпус №{obj.number}'
 
-    def create(self, validated_data):
-        next_number = House.get_next(validated_data.get('house'))
-        inst = House.objects.create(number=next_number, house=validated_data.get('house'))
-        return inst
-
 
 class StandpipeSerializer(ModelSerializer):
     id = IntegerField(required=False)
@@ -254,13 +246,16 @@ class SectionSerializer(ModelSerializer):
         model = Section
         fields = ('id', 'number', 'building', 'pipes', 'full_name', 'house', 'has_related')
 
-    def get_has_related(self, obj):
+    @staticmethod
+    def get_has_related(obj):
         return obj.floors.exists()
 
-    def get_house(self, obj):
+    @staticmethod
+    def get_house(obj):
         return obj.building.house.pk
 
-    def get_full_name(self, obj):
+    @staticmethod
+    def get_full_name(obj):
         return f'Секция №{obj.number}. Корпус №{obj.building.number}'
 
     def create(self, validated_data):
@@ -349,16 +344,19 @@ class ApartSerializer(ModelSerializer):
         model = Apartment
         fields = '__all__'
 
-    def get_sales_department_pk(self, obj):
+    @staticmethod
+    def get_sales_department_pk(obj):
         return obj.user.pk
 
-    def get_floor_display(self, obj):
+    @staticmethod
+    def get_floor_display(obj):
         floor = obj.floor
         section = floor.section
         building = section.building
         return f'Корпус {building.number}, Секция {section.number}, Этаж {floor.number}'
 
-    def get_house_pk(self, obj):
+    @staticmethod
+    def get_house_pk(obj):
         return obj.floor.section.building.house.pk
 
 
