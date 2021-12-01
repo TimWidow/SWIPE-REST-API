@@ -1,5 +1,19 @@
 from django_filters import rest_framework as filters
-from .models import Apartment, User
+from .models import  User, House, Apartment
+
+
+class HouseFilter(filters.FilterSet):
+    class Meta:
+        model = House
+        fields = {
+            'city': ['exact'],
+            'sea': ['gt', 'lt'],
+            'territory': ['exact'],
+            'house_type': ['exact'],
+            'parking': ['exact'],
+            'playground': ['exact'],
+            'security': ['exact']
+        }
 
 
 class ApartmentFilter(filters.FilterSet):
