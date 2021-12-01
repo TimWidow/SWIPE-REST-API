@@ -6,6 +6,7 @@ from django.contrib.auth import user_logged_in
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_jwt.serializers import jwt_payload_handler
 from twilio.rest import TwilioClient
 
@@ -15,6 +16,8 @@ from . import serializers
 from . import filters as my_filter
 from rest_framework import generics
 from django_filters import rest_framework as filters
+
+from .models import Building
 from .permissions import IsOwnerOrSuperuserOrReadOnly
 from datetime import datetime
 from rest_framework import status
@@ -88,6 +91,7 @@ def send_sms(request):
     phone = request.data['phone']
     send(phone)
     return Response(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
@@ -178,7 +182,7 @@ class ContactUpdate(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UserDetail(RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
     serializer_class = UserSerializer
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     queryset = models.User.objects.all()
@@ -194,19 +198,225 @@ class PromoCreate(CreateAPIView):
     serializer_class = PromotionSerializer
 
 
-class HouseList(ListAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = HouseListSerializer
-    queryset = House.objects.all()
+class BuildingViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrSuperuserOrReadOnly)
+    queryset = Building.objects.all().order_by('-id')
+    serializer_class = HouseSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = HouseFilter
+    view_tags = ['Houses']
+
+    def get_queryset(self):
+        return House.objects.filter(sales_department=self.request.user).order_by('-id')
+
+    def perform_create(self, serializer):
+        serializer.save(sales_department=self.request.user)
 
 
-class HouseCreate(CreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = HouseDetailSerializer
+class HousePublic(ListModelMixin,
+                  RetrieveModelMixin,
+                  GenericViewSet):
+    """
+    Api is available for any users even if they are not authenticated
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = []
+    queryset = House.objects.all().order_by('-id')
+    serializer_class = house_serializers.HouseSerializer
+    view_tags = ['Public-Houses']
 
 
-class HouseDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
-    serializer_class = HouseDetailSerializer
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    queryset = House.objects.all()
+class BuildingViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Building.objects.all().order_by('-id')
+    serializer_class = house_serializers.BuildingSerializer
+    view_tags = ['Buildings']
+
+    def get_queryset(self):
+        if self.request.query_params.get('house'):
+            return self.queryset.filter(house__pk=self.request.query_params.get('house'))
+        return self.queryset
+
+
+class SectionViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Section.objects.all().order_by('-id')
+    serializer_class = house_serializers.SectionSerializer
+    view_tags = ['Sections']
+
+    def get_queryset(self):
+        if self.request.query_params.get('building'):
+            return self.queryset.filter(building__pk=self.request.query_params.get('building'))
+        if self.request.query_params.get('house'):
+            return self.queryset.filter(building__house__pk=self.request.query_params.get('house'))
+        return self.queryset
+
+
+class FloorViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Floor.objects.all().order_by('-id')
+    serializer_class = house_serializers.FloorSerializer
+    view_tags = ['Floors']
+
+    def get_queryset(self):
+        if self.request.query_params.get('section'):
+            return self.queryset.filter(section__pk=self.request.query_params.get('section'))
+        if self.request.query_params.get('house'):
+            return self.queryset.filter(section__building__house__pk=self.request.query_params.get('house'))
+        return self.queryset
+
+
+class NewsItemViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = NewsItem.objects.all().order_by('-id')
+    serializer_class = house_serializers.NewsItemSerializer
+    view_tags = ['NewsItems']
+
+    def list(self, request, *args, **kwargs):
+        """ Filter news by house """
+        queryset = self.queryset.filter(house__pk=request.query_params.get('house'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class DocumentViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Document.objects.all().order_by('-id')
+    serializer_class = house_serializers.DocumentSerializer
+    view_tags = ['Documents']
+
+    def list(self, request, *args, **kwargs):
+        """ Filter documents by house """
+        queryset = self.queryset.filter(house__pk=request.query_params.get('house'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return generate_http_response_to_download(instance)
+
+
+class FlatViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Flat.objects.all().order_by('-id')
+    serializer_class = house_serializers.FlatSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = FlatFilter
+    view_tags = ['Flats']
+
+
+class FlatPublic(ListModelMixin,
+                 RetrieveModelMixin,
+                 GenericViewSet):
+    """
+    This api is available for anu users. Even if the are not authenticated
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = []
+    queryset = Flat.objects.all().order_by('-id')
+    serializer_class = house_serializers.FlatSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = FlatFilter
+    view_tags = ['Public-Flats']
+
+    def get_queryset(self):
+        if self.request.query_params.get('house__pk'):
+            return self.queryset.filter(floor__section__building__house__pk=self.request.query_params.get('house__pk'))
+        elif self.request.query_params.get('client_pk'):
+            return self.queryset.filter(client__pk=self.request.query_params.get('client_pk'))
+        else:
+            return self.queryset
+
+
+class BookingFlat(APIView):
+    permission_classes = (IsAuthenticated,)
+    view_tags = ['Flats']
+
+    def patch(self, request, pk, format=None):
+        """
+        patch: If booking == '1' and not flat.client - set new one.
+               If booking == '0' checks condition. Sets client as None can only either current client or house owner
+               Otherwise it will return error message in response
+        :param request: {'booking': '1'} or {'booking': '0'}
+        :param pk: flat pk
+        :param format:
+        :return: Response
+        """
+        flat = get_object_or_404(Flat, pk=pk)
+        is_house_owner = (flat.floor.section.building.house.sales_department == request.user)
+        if request.data.get('booking') == '1' and not flat.client:
+            flat.client = request.user
+            flat.booked = True
+
+            # After we booked flat - we have to send request to the house owner fro adding new info to house chest
+            data_for_request = {
+                'house': flat.floor.section.building.house.pk,
+                'flat': flat.pk
+            }
+            serializer = house_serializers.RequestToChestSerializer(data=data_for_request)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response({'Error': _('Error while creating request to chest. Connect to administration')})
+        elif request.data.get('booking') == '0':
+            if flat.client == request.user or is_house_owner:
+                flat.client = None
+                flat.booked = False
+                flat.owned = False
+                request_to_chest = get_object_or_404(RequestToChest, flat=flat)
+                request_to_chest.delete()
+            else:
+                return Response({'Error': _('You cannot remove current client from this flat')},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'Error': _('You cant book this flat')}, status=status.HTTP_400_BAD_REQUEST)
+        flat.save()
+        return Response({'pk': flat.pk,
+                         'user_pk': request.user.pk,
+                         'status': flat.booking_status}, status=status.HTTP_200_OK, )
+
+
+class RequestToChestApi(ListModelMixin,
+                        RetrieveModelMixin,
+                        UpdateModelMixin,
+                        DestroyModelMixin,
+                        GenericViewSet):
+    """ Manage requests to chest. Only house`s sales department can get its requests """
+    permission_classes = (IsAuthenticated, IsOwner)
+    queryset = RequestToChest.objects.all().order_by('-id')
+    serializer_class = house_serializers.RequestToChestSerializer
+    view_tags = ['Flats']
+
+    def get_queryset(self):
+        return self.queryset.filter(house__sales_department=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        flat = instance.flat
+        flat.booked = False
+        flat.owned = False
+        flat.client = None
+        flat.save()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeleteStandpipe(DestroyModelMixin,
+                      GenericViewSet):
+    """ Only for deleting standpipes.
+        For 'edit' action - user section view set and nested serializer
+     """
+    permission_classes = (IsAuthenticated, IsOwner)
+    queryset = Standpipe.objects.all().order_by('-id')
+    serializer_class = house_serializers.StandpipeSerializer
+    view_tags = ['Sections']

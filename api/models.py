@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import jwt
-import pyotp
 from django.contrib.auth.models import AbstractUser
 from django.db.models import *
 from phonenumber_field.modelfields import PhoneNumberField
@@ -43,12 +42,12 @@ class User(AbstractUser):
     def token(self):
         return self._generate_jwt_token()
 
-    def authenticate(self, otp):
-        """ This method authenticates the given otp"""
-        # Here we are using Time Based OTP. The interval is 300 seconds.
-        # otp must be provided within this interval or it's invalid
-        token = pyotp.TOTP(self.key, interval=300)
-        return token.verify(otp)
+    # def authenticate(self, otp):
+    #    """ This method authenticates the given otp"""
+    # Here we are using Time Based OTP. The interval is 300 seconds.
+    # otp must be provided within this interval or it's invalid
+    #    token = pyotp.TOTP(self.key, interval=300)
+    #    return token.verify(otp)
 
     def _generate_jwt_token(self):
         dt = datetime.now() + timedelta(days=1)
@@ -64,7 +63,7 @@ class User(AbstractUser):
         app_label = 'api'
 
 
-class House(Model):
+class Building(Model):
     PROPERTY_TYPE = (
         ('SECONDARY', 'Вторичный рынок'),
         ('NEW', 'Новостройки'),
@@ -107,6 +106,7 @@ class House(Model):
         ('AUTO', 'Автономное')
     )
     title = CharField(max_length=255, verbose_name='Название')
+    city = CharField(max_length=255, verbose_name='Город')
     address = CharField(max_length=255, verbose_name='Адрес')
     description = TextField(blank=True, null=True, verbose_name='Инфраструктура ЖК')
     property_type = CharField(max_length=10, choices=PROPERTY_TYPE, verbose_name='Тип недвижимости')
@@ -126,13 +126,26 @@ class House(Model):
     pay_options = CharField(max_length=255, blank=True, null=True, verbose_name='Варианты расчёта')
     status = CharField(max_length=255, blank=True, null=True, verbose_name='Статус недвижимости')
     contract_amount = CharField(max_length=255, blank=True, null=True, verbose_name='Сумма в договоре')
+    # Benefits
+    playground = BooleanField(default=False)
+    parking = BooleanField(default=False)
+    shop = BooleanField(default=False)
+    elevator = BooleanField(default=False)
+    security = BooleanField(default=False)
+
+    def get_next(self, house):
+        objects = self.objects.filter(house=house)
+        if objects:
+            last = objects.last().id
+            return last + 1
+        return 1
 
     def __str__(self):
         return self.title
 
 
 class HouseDoc(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    house = ForeignKey(Building, on_delete=CASCADE, verbose_name='ЖК')
     file = FileField(upload_to='documents/', verbose_name='Файл')
 
     def __str__(self):
@@ -140,7 +153,7 @@ class HouseDoc(Model):
 
 
 class HouseNew(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    house = ForeignKey(Building, on_delete=CASCADE, verbose_name='ЖК')
     title = CharField(max_length=255, verbose_name='Заголовок новости')
     description = TextField(verbose_name='Описание новости')
 
@@ -149,11 +162,19 @@ class HouseNew(Model):
 
 
 class Section(Model):
-    house = ForeignKey(House, on_delete=CASCADE)
+    building = ForeignKey(Building, on_delete=CASCADE)
     number = PositiveSmallIntegerField(verbose_name='Секция')
 
+    @classmethod
+    def get_next(cls, building: Building):
+        objects = cls.objects.filter(building=building)
+        if objects:
+            last = objects.last().number
+            return last + 1
+        return 1
+
     def __str__(self):
-        return str(self.house) + ', Секция ' + str(self.number)
+        return str(self.building) + ', Секция ' + str(self.number)
 
 
 class Floor(Model):
@@ -162,6 +183,11 @@ class Floor(Model):
 
     def __str__(self):
         return str(self.section) + ', Этаж ' + str(self.number)
+
+
+class Standpipe(Model):
+    name = CharField(max_length=50)
+    section = ForeignKey(Section, related_name='pipes', on_delete=CASCADE)
 
 
 class Promotion(Model):
@@ -233,7 +259,7 @@ class Apartment(Model):
         ('CALL&MES', 'Звонок + сообщение')
     )
 
-    house = ForeignKey(House, on_delete=CASCADE, null=True, verbose_name='ЖК')
+    house = ForeignKey(Building, on_delete=CASCADE, null=True, verbose_name='ЖК')
     floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
     document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
     address = CharField(max_length=255, blank=True, null=True, verbose_name='Адрес')
@@ -260,7 +286,7 @@ class Apartment(Model):
 
 
 class HouseImg(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    house = ForeignKey(Building, on_delete=CASCADE, verbose_name='ЖК')
     image = ImageField(upload_to='houses/', verbose_name='Фото')
 
     def __str__(self):
