@@ -4,7 +4,7 @@ import jwt
 from django.contrib.auth import user_logged_in
 from django.http import HttpResponse
 from django.utils.encoding import escape_uri_path
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
@@ -115,7 +115,7 @@ def authenticate_by_phone(request):
                 'error': 'can not authenticate with the given credentials or the account has been deactivated'}
             return Response(res, status=status.HTTP_403_FORBIDDEN)
     except KeyError:
-        res = {'error': 'please provide a email and a password'}
+        res = {'error': 'please provide a phone number'}
         return Response(res)
 
 
@@ -199,18 +199,18 @@ class HouseViewSet(ModelViewSet):
     serializer_class = HouseSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = HouseFilter
-    view_tags = ['Houses']
+    view_tags = ['House']
 
-    def get_queryset(self):
-        return House.objects.filter(sales_department=self.request.user).order_by('-id')
+    @action(detail=False)
+    def create(self, request, *args, **kwargs):
+        print(args)
+        print(kwargs)
+        # House.objects.create()
 
-    def perform_create(self, serializer):
-        serializer.save(sales_department=self.request.user)
 
-
-class HousePublic(ListModelMixin,
-                  RetrieveModelMixin,
-                  GenericViewSet):
+class HouseAllViewSet(ListModelMixin,
+                      RetrieveModelMixin,
+                      GenericViewSet):
     """
     Api is available for any users even if they are not authenticated
     """
@@ -218,7 +218,13 @@ class HousePublic(ListModelMixin,
     authentication_classes = []
     queryset = House.objects.all().order_by('-id')
     serializer_class = HouseSerializer
-    view_tags = ['Public-Houses']
+    view_tags = ['Houses']
+
+    @action(detail=False)
+    def list(self, request, *args, **kwargs):
+        queryset = House.objects.all()
+        serializer = HouseSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class SectionViewSet(ModelViewSet):

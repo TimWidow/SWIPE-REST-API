@@ -127,11 +127,11 @@ class House(Model):
     status = CharField(max_length=255, blank=True, null=True, verbose_name='Статус недвижимости')
     contract_amount = CharField(max_length=255, blank=True, null=True, verbose_name='Сумма в договоре')
     # Benefits
-    playground = BooleanField(default=False)
-    parking = BooleanField(default=False)
-    shop = BooleanField(default=False)
-    elevator = BooleanField(default=False)
-    security = BooleanField(default=False)
+    playground = BooleanField(default=False, verbose_name='Детская площадка')
+    parking = BooleanField(default=False, verbose_name='Паркинг')
+    shop = BooleanField(default=False, verbose_name='Супермаркет рядом')
+    elevator = BooleanField(default=False, verbose_name='Скоростной лифт')
+    security = BooleanField(default=False, verbose_name='Охрана')
 
     def get_next(self, house):
         objects = self.objects.filter(house=house)

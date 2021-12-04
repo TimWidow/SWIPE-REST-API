@@ -26,6 +26,6 @@ urlpatterns = [
     path('user/<int:pk>/', views.UserDetail.as_view(), name='user-detail'),
     path('user/create', views.UserCreate.as_view(), name='user-create'),
     path('promotion/create', views.PromoCreate.as_view(), name='promotion-create'),
-    path('house/', views.HouseViewSet, name='house-viewset'),
-    path('houses/', views.HousePublic, name='house-public'),
+    path('house/', views.HouseViewSet.as_view(({'get': 'create'})), name='house-viewset'),
+    path('houses/', views.HouseAllViewSet.as_view(({'get': 'list'})), name='houses-all-viewset'),
 ] + router.urls

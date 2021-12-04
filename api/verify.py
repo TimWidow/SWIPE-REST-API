@@ -19,4 +19,4 @@ def check(phone, code):
     return result.status == 'approved'
 
 
-print(check('+380662863099', '0000'))
+print(check('+380662863099', '4804'))

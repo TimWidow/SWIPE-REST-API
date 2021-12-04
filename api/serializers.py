@@ -169,7 +169,7 @@ class HouseDetailApartSerializer(ModelSerializer):
 
     class Meta:
         model = Apartment
-        fields = ('number', 'square', 'floor', 'client', 'booked')
+        fields = ('house', 'floor', 'address', 'apart_area', 'rooms')
 
     @staticmethod
     def get_floor(obj):
@@ -194,7 +194,6 @@ class HouseSerializer(ModelSerializer):
     sum_in_contract_display = CharField(source='get_sum_in_contract_display', read_only=True)
 
     flats = HouseDetailApartSerializer(read_only=True, many=True)
-    building_count = SerializerMethodField()
     section_count = SerializerMethodField()
     floor_count = SerializerMethodField()
     flat_count = SerializerMethodField()
@@ -204,20 +203,16 @@ class HouseSerializer(ModelSerializer):
         fields = '__all__'
 
     @staticmethod
-    def get_building_count(obj):
-        return obj.buildings.count()
-
-    @staticmethod
     def get_section_count(obj):
-        return Section.objects.filter(building__house=obj).count()
+        return Section.objects.filter(house=obj).count()
 
     @staticmethod
     def get_floor_count(obj):
-        return Floor.objects.filter(section__building__house=obj).count()
+        return Floor.objects.filter(section__house=obj).count()
 
     @staticmethod
     def get_flat_count(obj):
-        return Apartment.objects.filter(floor__section__building__house=obj).count()
+        return Apartment.objects.filter(floor__section__house=obj).count()
 
     @staticmethod
     def get_has_related(obj):

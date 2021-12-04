@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_filters',
     'rest_framework',
+    'rest_framework_swagger',
     'phone_verify',
     'drf_yasg',
     'easy_maps',
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'corsheaders',
     'api'
 ]
 
@@ -40,6 +42,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -62,6 +65,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'libraries': {
+                'static': 'django.templatetags.static',
+                'staticfiles': 'django.templatetags.static',
+            }
         },
     },
 ]
@@ -149,25 +156,41 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EASY_MAPS_GOOGLE_KEY = 'AIzaSyAMPq6gbs7dfX-AMgFtCvTpjK8ltHErwcY'
-
+# REST FRAMEWORK config
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 25,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-    ],
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    # 'DEFAULT_RENDERER_CLASSES': (
-    #    'rest_framework.renderers.JSONRenderer',
-    # ),
-    # 'DEFAULT_PARSER_CLASSES': (
-    #    'rest_framework.parsers.JSONParser',
-    # ),
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 
 }
+
+# REST_FRAMEWORK = {
+#    'DEFAULT_AUTHENTICATION_CLASSES': [
+#        'rest_framework.authentication.BasicAuthentication',
+#        'rest_framework.authentication.SessionAuthentication',
+#        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+#    ],
+#    'DEFAULT_PERMISSION_CLASSES': [
+#        'rest_framework.permissions.IsAuthenticated',
+#    ],
+#   'DEFAULT_RENDERER_CLASSES': (
+#       'rest_framework.renderers.JSONRenderer',
+#   ),
+# 'DEFAULT_PARSER_CLASSES': (
+#    'rest_framework.parsers.JSONParser',
+# ),
+#    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+#
+# }
 
 JWT_AUTH = {
 
@@ -215,3 +238,5 @@ PHONE_VERIFICATION = {
 TWILIO_PHONE = config('TWILIO_PHONE', default=None)
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default=None)
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default=None)
+
+LOGIN_URL = '/accounts/login/'
