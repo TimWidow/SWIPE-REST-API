@@ -2,6 +2,8 @@ import debug_toolbar
 from django.urls import include, path
 from django.conf.urls.static import static
 from rest_auth.views import LoginView
+
+from api.views import APILoginView
 from rest_framework_swagger.views import get_swagger_view
 
 from swipe.settings import MEDIA_ROOT, MEDIA_URL
@@ -32,7 +34,7 @@ urlpatterns = [path('', swagger_view),
                path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
                path('api/', include('api.urls')),
                path('api-auth/', include('rest_framework.urls')),  # For logins
-               path('accounts/login/', LoginView.as_view()),
+               path('accounts/login/', APILoginView.as_view()),
                path('admin/', admin.site.urls),
                path('__debug__/', include(debug_toolbar.urls)),
                ] + static(MEDIA_URL, document_root=MEDIA_ROOT)  # + default_router.urls

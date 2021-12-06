@@ -13,7 +13,7 @@ SECRET_KEY = "ql7uffku8cl)_++*-^x1&ikexbuyec2c6u-56nqr%e!#5@ych5"
 DEBUG = True
 DEBUG_TOOLBAR = False
 
-ALLOWED_HOSTS = ['188.166.95.221', '127.0.0.1']
+ALLOWED_HOSTS = ['188.166.95.221', '127.0.0.1', 'localhost']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'rest_framework_swagger',
+    'rest_framework.authtoken',
     'phone_verify',
     'drf_yasg',
     'easy_maps',
@@ -106,6 +107,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 AUTH_USER_MODEL = 'api.User'
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -167,6 +174,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'

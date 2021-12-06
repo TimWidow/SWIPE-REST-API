@@ -1,15 +1,27 @@
 import mimetypes
-
 import jwt
 from django.contrib.auth import user_logged_in
+from django.contrib.auth import (
+    login as django_login,
+    logout as django_logout
+)
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
 from django.utils.encoding import escape_uri_path
+from django.views.decorators.debug import sensitive_post_parameters
+from django.utils.translation import ugettext_lazy as _
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_jwt.serializers import jwt_payload_handler
+from rest_auth.app_settings import create_token
+from rest_auth.serializers import *
+from rest_auth.utils import jwt_encode
+from rest_auth.models import TokenModel
 from swipe import settings
 from . import filters as my_filter
 from rest_framework import generics
@@ -18,12 +30,17 @@ from .permissions import *
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from .serializers import *
 from .verify import send
 
+sensitive_post_parameters_m = method_decorator(
+    sensitive_post_parameters(
+        'password', 'old_password', 'new_password1', 'new_password2'
+    )
+)
 
-class RegistrationAPIView(APIView):
+
+class RegistrationAPIView(GenericAPIView):
     """
     Registers a new user.
     """
@@ -46,6 +63,131 @@ class RegistrationAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class APILoginView(GenericAPIView):
+    """
+        Check the credentials and return the REST Token
+        if the credentials are valid and authenticated.
+        Calls Django Auth login method to register User ID
+        in Django session framework
+
+        Accept the following POST parameters: email, password
+        Return the REST Framework Token Object's key.
+        """
+    permission_classes = (AllowAny,)
+    serializer_class = APILoginSerializer
+    token_model = TokenModel
+
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super(APILoginView, self).dispatch(*args, **kwargs)
+
+    def process_login(self):
+        django_login(self.request, self.user)
+
+    @staticmethod
+    def get_response_serializer():
+        if getattr(settings, 'REST_USE_JWT', False):
+            response_serializer = JWTSerializer
+        else:
+            response_serializer = TokenSerializer
+        return response_serializer
+
+    def login(self):
+        self.user = self.serializer.validated_data['user']
+
+        if getattr(settings, 'REST_USE_JWT', False):
+            self.token = jwt_encode(self.user)
+        else:
+            self.token = create_token(self.token_model, self.user,
+                                      self.serializer)
+
+        if getattr(settings, 'REST_SESSION_LOGIN', True):
+            self.process_login()
+
+    def get_response(self):
+        serializer_class = self.get_response_serializer()
+
+        if getattr(settings, 'REST_USE_JWT', False):
+            data = {
+                'user': self.user,
+                'token': self.token
+            }
+            serializer = serializer_class(instance=data,
+                                          context={'request': self.request})
+        else:
+            serializer = serializer_class(instance=self.token,
+                                          context={'request': self.request})
+
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        if getattr(settings, 'REST_USE_JWT', False):
+            from rest_framework_jwt.settings import api_settings as jwt_settings
+            if jwt_settings.JWT_AUTH_COOKIE:
+                from datetime import datetime
+                expiration = (datetime.utcnow() + jwt_settings.JWT_EXPIRATION_DELTA)
+                response.set_cookie(jwt_settings.JWT_AUTH_COOKIE,
+                                    self.token,
+                                    expires=expiration,
+                                    httponly=True)
+        return response
+
+    def post(self, request, *args, **kwargs):
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data,
+                                              context={'request': request})
+        self.serializer.is_valid(raise_exception=True)
+
+        self.login()
+        return self.get_response()
+
+
+class PhoneAuthenticationView(GenericAPIView):
+    serializer_class = PhoneAuthenticationSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = PhoneAuthenticationSerializer(data=self.request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            return Response({'token': user.auth_token.key}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class APILogoutView(APIView):
+    """
+    Calls Django logout method and delete the Token object
+    assigned to the current User object.
+
+    Accepts/Returns nothing.
+    """
+    permission_classes = (AllowAny,)
+
+    def get(self, request, *args, **kwargs):
+        if getattr(settings, 'ACCOUNT_LOGOUT_ON_GET', False):
+            response = self.logout(request)
+        else:
+            response = self.http_method_not_allowed(request, *args, **kwargs)
+
+        return self.finalize_response(request, response, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.logout(request)
+
+    def logout(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            pass
+        if getattr(settings, 'REST_SESSION_LOGIN', True):
+            django_logout(request)
+
+        response = Response({"detail": _("Successfully logged out.")},
+                            status=status.HTTP_200_OK)
+        if getattr(settings, 'REST_USE_JWT', False):
+            from rest_framework_jwt.settings import api_settings as jwt_settings
+            if jwt_settings.JWT_AUTH_COOKIE:
+                response.delete_cookie(jwt_settings.JWT_AUTH_COOKIE)
+        return response
 
 
 @api_view(['POST'])

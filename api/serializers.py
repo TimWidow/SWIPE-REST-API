@@ -1,7 +1,11 @@
+from abc import ABC
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
+from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 from rest_framework.serializers import *
-from . import auth
 
+from . import auth
 from .models import User, House, Promotion, Apartment, Floor, Section, HouseNew, HouseDoc, Standpipe
 
 
@@ -19,15 +23,14 @@ class RegistrationSerializer(ModelSerializer):
         fields = ('phone', 'email', 'password', 'token',)
 
     def create(self, validated_data):
-        validated_data['username'] = validated_data['email']
         print(validated_data)
         return User.objects.create_user(**validated_data)
 
 
-class LoginSerializer(Serializer):
+class PhoneAuthenticationSerializer(Serializer):
     """
     Authenticates an existing user.
-    Email and password are required.
+    Phone number is required.
     Returns a JSON web token.
     """
 
@@ -38,7 +41,6 @@ class LoginSerializer(Serializer):
         pass
 
     phone = IntegerField(write_only=True)
-    password = CharField(max_length=128, write_only=True)
 
     # Ignore these fields if they are included in the request.
     token = CharField(max_length=255, read_only=True)
@@ -48,23 +50,17 @@ class LoginSerializer(Serializer):
         Validates user data.
         """
         phone = data.get('phone', None)
-        password = data.get('password', None)
 
         if phone is None:
             raise ValidationError(
                 'An email address is required to log in.'
             )
 
-        if password is None:
-            raise ValidationError(
-                'A password is required to log in.'
-            )
-
         user = auth.PhoneAuthBackend.authenticate(phone=phone)
 
         if user is None:
             raise ValidationError(
-                'A user with this email and password was not found.'
+                'A user with this phone number was not found.'
             )
 
         if not user.is_active:
@@ -75,6 +71,70 @@ class LoginSerializer(Serializer):
         return {
             'token': user.token,
         }
+
+
+class APILoginSerializer(Serializer):
+    """
+    Authenticates an existing user.
+    Phone number is required.
+    Returns a JSON web token.
+    """
+    email = EmailField(required=False, allow_blank=True)
+    password = CharField(style={'input_type': 'password'})
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    def authenticate(self, **kwargs):
+        return authenticate(self.context['request'], **kwargs)
+
+    def _validate_email(self, email, password):
+
+        if email and password:
+            user = self.authenticate(email=email, password=password)
+        else:
+            msg = _('Must include "email" and "password".')
+            raise ValidationError(msg)
+
+        return user
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        user = None
+
+        if 'allauth' in settings.INSTALLED_APPS:
+            user = self._validate_email(email, password)
+
+        else:
+            # Authentication without using allauth
+            if email:
+                try:
+                    User.objects.get(email__iexact=email)
+                except User.DoesNotExist:
+                    pass
+
+        # Did we get back an active user?
+        if user:
+            if not user.is_active:
+                msg = _('User account is disabled.')
+                raise ValidationError(msg)
+        else:
+            msg = _('Unable to log in with provided credentials.')
+            raise ValidationError(msg)
+
+        # If required, is the email verified?
+        if 'rest_auth.registration' in settings.INSTALLED_APPS:
+            email_address = user.emailaddress_set.get(email=user.email)
+            if not email_address.verified:
+                raise ValidationError(_('E-mail is not verified.'))
+
+        attrs['user'] = user
+        return attrs
 
 
 class PromotionSerializer(ModelSerializer):
