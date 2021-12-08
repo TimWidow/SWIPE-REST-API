@@ -232,6 +232,7 @@ class House(Model):
     pay_options = CharField(max_length=255, blank=True, null=True, verbose_name='Варианты расчёта')
     status = CharField(max_length=255, blank=True, null=True, verbose_name='Статус недвижимости')
     contract_amount = CharField(max_length=255, blank=True, null=True, verbose_name='Сумма в договоре')
+    sales_department = ForeignKey(User, related_name='managed_houses', on_delete=CASCADE, blank=True)
     # Benefits
     playground = BooleanField(default=False, verbose_name='Детская площадка')
     parking = BooleanField(default=False, verbose_name='Паркинг')
@@ -239,32 +240,32 @@ class House(Model):
     elevator = BooleanField(default=False, verbose_name='Скоростной лифт')
     security = BooleanField(default=False, verbose_name='Охрана')
 
-    def get_next(self, house):
-        objects = self.objects.filter(house=house)
-        if objects:
-            last = objects.last().id
-            return last + 1
-        return 1
+    @property
+    def user(self):
+        return self.sales_department
 
     def __str__(self):
         return self.title
 
 
-class HouseDoc(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
-    file = FileField(upload_to='documents/', verbose_name='Файл')
+class Block(Model):
+    house = ForeignKey(House, on_delete=CASCADE)
+    number = PositiveSmallIntegerField(verbose_name='Корпус')
+
+    @classmethod
+    def get_next(cls, house: House):
+        objects = cls.objects.filter(house=house)
+        if objects:
+            last = objects.last().number
+            return last + 1
+        return 1
+
+    @property
+    def user(self):
+        return self.house.user
 
     def __str__(self):
-        return str(self.house)
-
-
-class HouseNew(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
-    title = CharField(max_length=255, verbose_name='Заголовок новости')
-    description = TextField(verbose_name='Описание новости')
-
-    def __str__(self):
-        return str(self.house) + ', ' + str(self.title)
+        return str(self.house) + 'Корпус ' + str(self.number)
 
 
 class Section(Model):
@@ -300,8 +301,25 @@ class Floor(Model):
 
 
 class Standpipe(Model):
-    name = CharField(max_length=50)
-    section = ForeignKey(Section, related_name='pipes', on_delete=CASCADE)
+    section = ForeignKey(Section, on_delete=CASCADE)
+    number = PositiveSmallIntegerField(verbose_name='Этаж')
+
+
+class HouseDoc(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    file = FileField(upload_to='documents/', verbose_name='Файл')
+
+    def __str__(self):
+        return str(self.house)
+
+
+class HouseNew(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    title = CharField(max_length=255, verbose_name='Заголовок новости')
+    description = TextField(verbose_name='Описание новости')
+
+    def __str__(self):
+        return str(self.house) + ', ' + str(self.title)
 
 
 class Promotion(Model):

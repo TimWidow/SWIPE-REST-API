@@ -24,7 +24,7 @@ from rest_auth.utils import jwt_encode
 from rest_auth.models import TokenModel
 from swipe import settings
 from . import filters as my_filter
-from rest_framework import generics
+from rest_framework.generics import *
 from .filters import *
 from .permissions import *
 from rest_framework import status
@@ -269,13 +269,13 @@ class ApartmentList(generics.ListAPIView):
     filterset_class = ApartFilter
 
 
-class ApartmentDetail(generics.RetrieveUpdateDestroyAPIView):
+class ApartmentDetailRetrieve(UpdateDestroyAPIView):
     permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
     queryset = Apartment.objects.all()
     serializer_class = ApartmentDetailSerializer
 
 
-class ApartmentCreate(generics.CreateAPIView):
+class ApartmentCreate(CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ApartmentCreateSerializer
 
@@ -493,3 +493,31 @@ class DeleteStandpipe(DestroyModelMixin,
     queryset = Standpipe.objects.all().order_by('-id')
     serializer_class = StandpipeSerializer
     view_tags = ['Sections']
+
+
+class HouseViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = House.objects.all().order_by('-id')
+    serializer_class = HouseSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = HouseFilter
+    view_tags = ['Houses']
+
+    def get_queryset(self):
+        return House.objects.filter(sales_department=self.request.user).order_by('-id')
+
+    def perform_create(self, serializer):
+        serializer.save(sales_department=self.request.user)
+
+
+class HousePublic(ListModelMixin,
+                  RetrieveModelMixin,
+                  GenericViewSet):
+    """
+    Api is available for any users even if they are not authenticated
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = []
+    queryset = House.objects.all().order_by('-id')
+    serializer_class = house_serializers.HouseSerializer
+    view_tags = ['Public-Houses']
