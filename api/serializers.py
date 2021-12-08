@@ -403,6 +403,7 @@ class ApartSerializer(ModelSerializer):
 
     @staticmethod
     def get_floor_display(obj):
+        print(obj)
         floor = obj.floor
         section = floor.section
         block = section.block

@@ -35,6 +35,7 @@ urlpatterns = [path('', swagger_view),
                path('api/', include('api.urls')),
                path('api-auth/', include('rest_framework.urls')),  # For logins
                path('accounts/login/', APILoginView.as_view()),
+               path('dj-rest-auth/', include('dj_rest_auth.urls')),
                path('admin/', admin.site.urls),
                path('__debug__/', include(debug_toolbar.urls)),
                ] + static(MEDIA_URL, document_root=MEDIA_ROOT)  # + default_router.urls

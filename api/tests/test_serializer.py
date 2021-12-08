@@ -14,10 +14,12 @@ class ApartmentSerializerTestCase(TestCase):
                                                apart_area=42.0, kitchen_area=21.0, loggia=True,
                                                heating='GAS')
         data = [ApartmentDetailSerializer(apartment_1).data]
-        # print(data)
+        print(data)
         exp_data = [
             {'house': None,
+             'block': None,
              'floor': None,
+             'section': None,
              'document': 'OWNERSHIP',
              'address': 'Test address',
              'number': 1,
@@ -31,5 +33,5 @@ class ApartmentSerializerTestCase(TestCase):
              'heating': 'GAS',
              'client': None}
         ]
-        # print(exp_data)
+        print(exp_data)
         self.assertEqual(data, exp_data)

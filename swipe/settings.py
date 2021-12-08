@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'rest_framework.authtoken',
+    'dj_rest_auth',
     'phone_verify',
     'drf_yasg',
     'easy_maps',
@@ -112,7 +113,6 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
-
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -248,3 +248,6 @@ TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default=None)
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default=None)
 
 LOGIN_URL = '/accounts/login/'
+
+REST_USE_JWT = True
+JWT_AUTH_COOKIE = 'jwt-auth'
