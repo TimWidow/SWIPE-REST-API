@@ -7,7 +7,8 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.serializers import *
 from . import auth
-from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe, HouseNew, HouseDoc, RequestToChess
+from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe, HouseNew, HouseDoc, RequestToChess, \
+    Block
 
 
 class RegistrationSerializer(ModelSerializer):
@@ -164,7 +165,7 @@ class ApartmentCreateSerializer(ModelSerializer):
     class Meta:
         model = Apartment
         fields = ['house', 'floor', 'rooms', 'document', 'apart_type', 'apart_status', 'apart_layout',
-                  'apart_area', 'kitchen_area', 'loggia', 'heating', 'commission', 'description', 'owner']
+                  'apart_area', 'kitchen_area', 'loggia', 'heating']
 
     def create(self, validated_data):
         return Apartment.objects.create(**validated_data)
@@ -233,7 +234,7 @@ class HouseDetailApartSerializer(ModelSerializer):
 
     @staticmethod
     def get_floor(obj):
-        return obj.floor.name
+        return obj.floor.number
 
 
 class HouseSerializer(ModelSerializer):
@@ -253,34 +254,31 @@ class HouseSerializer(ModelSerializer):
     role_display = CharField(source='get_role_display', read_only=True)
     sum_in_contract_display = CharField(source='get_sum_in_contract_display', read_only=True)
 
-    aparts = HouseDetailApartSerializer(read_only=True, many=True)
+    # Apartments = HouseDetailApartSerializer(read_only=True, many=True)
+    block_count = SerializerMethodField()
     section_count = SerializerMethodField()
     floor_count = SerializerMethodField()
-    apart_count = SerializerMethodField()
+    # Apartment_count = SerializerMethodField()
 
     class Meta:
         model = House
         fields = '__all__'
 
     @staticmethod
+    def get_block_count(obj):
+        return Block.objects.filter(house=obj).count()
+
+    @staticmethod
     def get_section_count(obj):
-        return Section.objects.filter(house=obj).count()
+        return Section.objects.filter(block__house=obj).count()
 
     @staticmethod
     def get_floor_count(obj):
-        return Floor.objects.filter(section__house=obj).count()
+        return Floor.objects.filter(section__block__house=obj).count()
 
     @staticmethod
     def get_apart_count(obj):
-        return Apartment.objects.filter(floor__section__house=obj).count()
-
-    @staticmethod
-    def get_has_related(obj):
-        return obj.sections.exists()
-
-    @staticmethod
-    def get_full_name(obj):
-        return f'Корпус №{obj.number}'
+        return Apartment.objects.filter(floor__section__block__house=obj).count()
 
 
 class StandpipeSerializer(ModelSerializer):
@@ -378,7 +376,7 @@ class HouseNewSerializer(ModelSerializer):
         return f'{obj.created.year}-{obj.created.month}-{obj.created.day}'
 
 
-class DocumentSerializer(ModelSerializer):
+class HouseDocSerializer(ModelSerializer):
     class Meta:
         model = HouseDoc
         fields = ('id', 'file', 'house')
@@ -448,8 +446,8 @@ class RequestToChessSerializer(ModelSerializer):
             return {
                 'id': apart.pk,
                 'number': apart.number,
-                'floor': f'Корпус {apart.floor.section.block.number}, '/
-                         f'Секция {apart.floor.section.number}, '/
+                'floor': f'Корпус {apart.floor.section.block.number}, ' /
+                         f'Секция {apart.floor.section.number}, ' /
                          f'Этаж {apart.floor.number}',
                 'house': apart.floor.section.block.house,
                 'house_pk': apart.floor.section.block.house.pk,

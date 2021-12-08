@@ -403,7 +403,7 @@ class HouseNewsViewSet(ModelViewSet):
 class DocumentViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     queryset = HouseDoc.objects.all().order_by('-id')
-    serializer_class = DocumentSerializer
+    serializer_class = HouseDocSerializer
     view_tags = ['Documents']
 
     def list(self, request, *args, **kwargs):
