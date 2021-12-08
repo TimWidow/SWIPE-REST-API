@@ -1,12 +1,13 @@
-from abc import ABC
+from datetime import datetime
+
+import pytz as pytz
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.serializers import *
-
 from . import auth
-from .models import User, House, Promotion, Apartment, Floor, Section, HouseNew, HouseDoc, Standpipe
+from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe, HouseNew, HouseDoc, RequestToChess
 
 
 class RegistrationSerializer(ModelSerializer):
@@ -148,7 +149,7 @@ class ApartmentListSerializer(ModelSerializer):
 
     class Meta:
         model = Apartment
-        fields = ('house', 'floor', 'rooms', 'apart_area', 'price', 'created', 'promotion')
+        fields = ('house', 'floor', 'rooms', 'apart_area')
 
 
 class ApartmentDetailSerializer(ModelSerializer):
@@ -156,8 +157,7 @@ class ApartmentDetailSerializer(ModelSerializer):
         model = Apartment
         fields = (
             'house', 'floor', 'document', 'address', 'rooms', 'apart_type', 'apart_status', 'apart_layout',
-            'apart_area', 'kitchen_area', 'loggia', 'heating', 'payment', 'contact', 'promotion',
-            'commission', 'description', 'price', 'owner')
+            'apart_area', 'kitchen_area', 'loggia', 'heating', 'client')
 
 
 class ApartmentCreateSerializer(ModelSerializer):
@@ -253,10 +253,10 @@ class HouseSerializer(ModelSerializer):
     role_display = CharField(source='get_role_display', read_only=True)
     sum_in_contract_display = CharField(source='get_sum_in_contract_display', read_only=True)
 
-    flats = HouseDetailApartSerializer(read_only=True, many=True)
+    aparts = HouseDetailApartSerializer(read_only=True, many=True)
     section_count = SerializerMethodField()
     floor_count = SerializerMethodField()
-    flat_count = SerializerMethodField()
+    apart_count = SerializerMethodField()
 
     class Meta:
         model = House
@@ -271,7 +271,7 @@ class HouseSerializer(ModelSerializer):
         return Floor.objects.filter(section__house=obj).count()
 
     @staticmethod
-    def get_flat_count(obj):
+    def get_apart_count(obj):
         return Apartment.objects.filter(floor__section__house=obj).count()
 
     @staticmethod
@@ -288,7 +288,7 @@ class StandpipeSerializer(ModelSerializer):
 
     class Meta:
         model = Standpipe
-        fields = ('id', 'name',)
+        fields = ('id', 'number',)
 
 
 class SectionSerializer(ModelSerializer):
@@ -299,7 +299,7 @@ class SectionSerializer(ModelSerializer):
 
     class Meta:
         model = Section
-        fields = ('id', 'number', 'building', 'pipes', 'full_name', 'house', 'has_related')
+        fields = ('id', 'number', 'block', 'pipes', 'full_name', 'house', 'has_related')
 
     @staticmethod
     def get_has_related(obj):
@@ -307,14 +307,14 @@ class SectionSerializer(ModelSerializer):
 
     @staticmethod
     def get_house(obj):
-        return obj.building.house.pk
+        return obj.block.house.pk
 
     @staticmethod
     def get_full_name(obj):
-        return f'Секция №{obj.number}. Корпус №{obj.building.number}'
+        return f'Секция №{obj.number}. Корпус №{obj.block.number}'
 
     def create(self, validated_data):
-        next_number = Section.get_next(validated_data.get('building'))
+        next_number = Section.get_next(validated_data.get('block'))
         validated_data['number'] = next_number
         if validated_data.get('pipes'):
             pipes_data = validated_data.pop('pipes')
@@ -349,19 +349,19 @@ class FloorSerializer(ModelSerializer):
 
     @staticmethod
     def get_has_related(obj):
-        return obj.flats.exists()
+        return obj.aparts.exists()
 
     @staticmethod
     def get_house(obj):
-        return obj.section.building.house.pk
+        return obj.section.block.house.pk
 
     @staticmethod
     def get_full_name(obj):
-        building = obj.section.building
-        return f'Этаж №{obj.number}. Секция №{obj.section.number}. Корпус №{building.number}'
+        block = obj.section.block
+        return f'Этаж №{obj.number}. Секция №{obj.section.number}. Корпус №{block.number}'
 
     def create(self, validated_data):
-        next_number = Floor.get_next(validated_data.get('building'))
+        next_number = Floor.get_next(validated_data.get('block'))
         inst = Floor.objects.create(number=next_number, section=validated_data.get('section'))
         return inst
 
@@ -407,12 +407,12 @@ class ApartSerializer(ModelSerializer):
     def get_floor_display(obj):
         floor = obj.floor
         section = floor.section
-        building = section.building
-        return f'Корпус {building.number}, Секция {section.number}, Этаж {floor.number}'
+        block = section.block
+        return f'Корпус {block.number}, Секция {section.number}, Этаж {floor.number}'
 
     @staticmethod
     def get_house_pk(obj):
-        return obj.floor.section.building.house.pk
+        return obj.floor.section.block.house.pk
 
 
 class HouseInRequestSerializer(ModelSerializer):
@@ -423,7 +423,48 @@ class HouseInRequestSerializer(ModelSerializer):
         fields = ('name', 'address', 'role', 'city', 'role_display')
 
 
-class FlatInRequestSerializer(ModelSerializer):
+class ApartInRequestSerializer(ModelSerializer):
     class Meta:
         model = Apartment
         fields = ('pk', 'number', 'floor', 'booked', 'client')
+
+
+class RequestToChessSerializer(ModelSerializer):
+    apart_display = SerializerMethodField()
+
+    class Meta:
+        model = RequestToChess
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data['created'] = datetime.now(tz=pytz.UTC)
+        return super().create(validated_data)
+
+    @staticmethod
+    def get_apart_display(obj):
+        apart = obj.apart
+        if apart.client:
+            client = obj.apart.client
+            return {
+                'id': apart.pk,
+                'number': apart.number,
+                'floor': f'Корпус {apart.floor.section.block.number}, '/
+                         f'Секция {apart.floor.section.number}, '/
+                         f'Этаж {apart.floor.number}',
+                'house': apart.floor.section.block.house,
+                'house_pk': apart.floor.section.block.house.pk,
+                'client_pk': client.pk,
+                'client_full_name': client.full_name(),
+                'client_phone_number': client.phone_number,
+                'client_email': client.email
+            }
+        return {}
+
+    def update(self, instance, validated_data):
+        apart = instance.apart
+        apart.owned = validated_data['approved']
+        apart.booked = validated_data['approved']
+        if not validated_data['approved']:
+            apart.client = None
+        apart.save()
+        return super().update(instance, validated_data)

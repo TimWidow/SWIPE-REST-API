@@ -13,7 +13,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, DestroyModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -261,7 +261,7 @@ def authenticate_by_phone(request):
         return Response(res)
 
 
-class ApartmentList(generics.ListAPIView):
+class ApartmentList(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ApartmentListSerializer
     queryset = Apartment.objects.all()
@@ -269,8 +269,8 @@ class ApartmentList(generics.ListAPIView):
     filterset_class = ApartFilter
 
 
-class ApartmentDetailRetrieve(UpdateDestroyAPIView):
-    permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
+class ApartmentDetail(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     queryset = Apartment.objects.all()
     serializer_class = ApartmentDetailSerializer
 
@@ -295,15 +295,15 @@ class FloorList(ListAPIView):
     queryset = Floor.objects.all()
 
 
-class ContactList(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+class ContactList(ListAPIView):
+    permission_classes = [IsAuthenticated, IsOwner]
     filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = ContactListSerializer
     queryset = User.objects.all()
     filterset_class = my_filter.ContactListFilter
 
 
-class ContactCreate(generics.CreateAPIView):
+class ContactCreate(CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ContactCreateSerializer
 
@@ -312,14 +312,14 @@ class ContactCreate(generics.CreateAPIView):
         serializer.save()
 
 
-class ContactUpdate(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
+class ContactUpdate(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = ContactSerializer
 
 
 class UserDetail(RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsOwnerOrSuperuserOrReadOnly, IsAuthenticated]
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     serializer_class = UserSerializer
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     queryset = User.objects.all()
@@ -331,23 +331,8 @@ class UserCreate(CreateAPIView):
 
 
 class PromoCreate(CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrReadOnly]
     serializer_class = PromotionSerializer
-
-
-class HouseViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated, IsOwnerOrSuperuserOrReadOnly)
-    queryset = House.objects.all().order_by('-id')
-    serializer_class = HouseSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = HouseFilter
-    view_tags = ['House']
-
-    @action(detail=False)
-    def create(self, request, *args, **kwargs):
-        print(args)
-        print(kwargs)
-        # House.objects.create()
 
 
 class HouseAllViewSet(ListModelMixin,
@@ -461,40 +446,6 @@ class ApartViewSet(ModelViewSet):
     view_tags = ['Apartments']
 
 
-class FlatPublic(ListModelMixin,
-                 RetrieveModelMixin,
-                 GenericViewSet):
-    """
-    This api is available for anu users. Even if the are not authenticated
-    """
-    permission_classes = (AllowAny,)
-    authentication_classes = []
-    queryset = Apartment.objects.all().order_by('-id')
-    serializer_class = ApartSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = ApartFilter
-    view_tags = ['Public-Flats']
-
-    def get_queryset(self):
-        if self.request.query_params.get('house__pk'):
-            return self.queryset.filter(floor__section__building__house__pk=self.request.query_params.get('house__pk'))
-        elif self.request.query_params.get('client_pk'):
-            return self.queryset.filter(client__pk=self.request.query_params.get('client_pk'))
-        else:
-            return self.queryset
-
-
-class DeleteStandpipe(DestroyModelMixin,
-                      GenericViewSet):
-    """ Only for deleting standpipes.
-        For 'edit' action - user section view set and nested serializer
-     """
-    permission_classes = (IsAuthenticated, IsOwner)
-    queryset = Standpipe.objects.all().order_by('-id')
-    serializer_class = StandpipeSerializer
-    view_tags = ['Sections']
-
-
 class HouseViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     queryset = House.objects.all().order_by('-id')
@@ -519,5 +470,100 @@ class HousePublic(ListModelMixin,
     permission_classes = (AllowAny,)
     authentication_classes = []
     queryset = House.objects.all().order_by('-id')
-    serializer_class = house_serializers.HouseSerializer
+    serializer_class = HouseSerializer
     view_tags = ['Public-Houses']
+
+
+class ApartPublic(ListModelMixin,
+                  RetrieveModelMixin,
+                  GenericViewSet):
+    """
+    This api is available for anu users. Even if the are not authenticated
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = []
+    queryset = Apartment.objects.all().order_by('-id')
+    serializer_class = ApartSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = ApartFilter
+    view_tags = ['Public-Apartments']
+
+    def get_queryset(self):
+        if self.request.query_params.get('house__pk'):
+            return self.queryset.filter(floor__section__block__house__pk=self.request.query_params.get('house__pk'))
+        elif self.request.query_params.get('client_pk'):
+            return self.queryset.filter(client__pk=self.request.query_params.get('client_pk'))
+        else:
+            return self.queryset
+
+
+class Booking(APIView):
+    permission_classes = (IsAuthenticated,)
+    view_tags = ['Apartments']
+
+    def patch(self, request, pk):
+        """
+        patch: If booking == '1' and not apart.client - set new one.
+               If booking == '0' checks condition. Sets client as None can only either current client or house owner
+               Otherwise it will return error message in response
+        :param request: {'booking': '1'} or {'booking': '0'}
+        :param pk: apart pk
+        :param format:
+        :return: Response
+        """
+        apart = get_object_or_404(Apartment, pk=pk)
+        is_house_owner = (apart.floor.section.block.house.sales_department == request.user)
+        if request.data.get('booking') == '1' and not apart.client:
+            apart.client = request.user
+            apart.booked = True
+
+            data_for_request = {
+                'house': apart.floor.section.block.house.pk,
+                'apart': apart.pk
+            }
+            serializer = RequestToChessSerializer(data=data_for_request)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response({'Error': _('Error while creating request to chest. Connect to administration')})
+        elif request.data.get('booking') == '0':
+            if apart.client == request.user or is_house_owner:
+                apart.client = None
+                apart.booked = False
+                apart.owned = False
+                request_to_chest = get_object_or_404(RequestToChess, apart=apart)
+                request_to_chest.delete()
+            else:
+                return Response({'Error': _('You cannot remove current client from this apart')},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'Error': _('You cant book this apart')}, status=status.HTTP_400_BAD_REQUEST)
+        apart.save()
+        return Response({'pk': apart.pk,
+                         'user_pk': request.user.pk,
+                         'status': apart.booking_status}, status=status.HTTP_200_OK, )
+
+
+class RequestToChestApi(ListModelMixin,
+                        RetrieveModelMixin,
+                        UpdateModelMixin,
+                        DestroyModelMixin,
+                        GenericViewSet):
+    """ Manage requests to chest. Only house`s sales department can get its requests """
+    permission_classes = (IsAuthenticated, IsOwner)
+    queryset = RequestToChess.objects.all().order_by('-id')
+    serializer_class = RequestToChessSerializer
+    view_tags = ['aparts']
+
+    def get_queryset(self):
+        return self.queryset.filter(house__sales_department=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        apart = instance.apart
+        apart.booked = False
+        apart.owned = False
+        apart.client = None
+        apart.save()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

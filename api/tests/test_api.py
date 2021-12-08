@@ -18,14 +18,11 @@ class ApartmentTestCase(APITestCase):
         self.user = models.User.objects.create(email='test@gmail.com',
                                                password='123')
         self.client.force_login(self.user)
-        self.apartment = Apartment.objects.create(document='OWNERSHIP', address='Test address', rooms=1,
-                                                  apart_type='APARTMENT', apart_status='SHELL',
-                                                  apart_layout='STUDIO',
+        self.apartment = Apartment.objects.create(document='OWNERSHIP', number=1, address='Test address',
+                                                  rooms=1, apart_type='APARTMENT',
+                                                  apart_status='SHELL', apart_layout='STUDIO',
                                                   apart_area=42.0, kitchen_area=21.0, loggia=True,
-                                                  heating='GAS', payment='CAPITAL', contact='CALL',
-                                                  price=10000, commission=1000,
-                                                  description='test description', is_actual=True,
-                                                  created=datetime.now())
+                                                  heating='GAS')
 
     def test_list(self):
         url = reverse('apartment-list')

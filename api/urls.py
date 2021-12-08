@@ -16,7 +16,9 @@ urlpatterns = [
     path('login/', views.authenticate_by_phone, name='phone_login'),
     path('send/', views.send_sms, name='sms'),
     path('login_email/', views.authenticate_by_email, name='email_login'),
-    path('apartment/', views.ApartmentList.as_view(), name='apartment-list'),
+    path('house/create', views.HouseViewSet.as_view(({'get': 'create'})), name='house-viewset'),
+    path('houses/', views.HousePublic.as_view(({'get': 'list'})), name='houses-list'),
+    path('apartments/', views.ApartPublic.as_view({'get': 'list'}), name='apartment-list'),
     path('apartment/<int:pk>/', views.ApartmentDetail.as_view(), name='apartment-detail'),
     path('apartment/create/', views.ApartmentCreate.as_view(), name='apartment-create'),
     path('floor/create/', views.FloorCreate.as_view(), name='floor-create'),
@@ -26,6 +28,5 @@ urlpatterns = [
     path('user/<int:pk>/', views.UserDetail.as_view(), name='user-detail'),
     path('user/create', views.UserCreate.as_view(), name='user-create'),
     path('promotion/create', views.PromoCreate.as_view(), name='promotion-create'),
-    path('house/', views.HouseViewSet.as_view(({'get': 'create'})), name='house-viewset'),
-    path('houses/', views.HouseAllViewSet.as_view(({'get': 'list'})), name='houses-all-viewset'),
+
 ] + router.urls

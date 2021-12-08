@@ -248,6 +248,45 @@ class House(Model):
         return self.title
 
 
+class HouseImg(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    image = ImageField(upload_to='houses/', verbose_name='Фото')
+
+    def __str__(self):
+        return str(self.house)
+
+    @property
+    def user(self):
+        return self.house.user
+
+    def get_files(self):
+        return [self.image]
+
+
+class HouseDoc(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    file = FileField(upload_to='documents/', verbose_name='Файл')
+
+    def __str__(self):
+        return str(self.house)
+
+    @property
+    def user(self):
+        return self.house.user
+
+    def get_files(self):
+        return [self.file]
+
+
+class HouseNew(Model):
+    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
+    title = CharField(max_length=255, verbose_name='Заголовок новости')
+    description = TextField(verbose_name='Описание новости')
+
+    def __str__(self):
+        return str(self.house) + ', ' + str(self.title)
+
+
 class Block(Model):
     house = ForeignKey(House, on_delete=CASCADE)
     number = PositiveSmallIntegerField(verbose_name='Корпус')
@@ -269,24 +308,31 @@ class Block(Model):
 
 
 class Section(Model):
-    house = ForeignKey(House, on_delete=CASCADE)
+    block = ForeignKey(Block, on_delete=CASCADE)
     number = PositiveSmallIntegerField(verbose_name='Секция')
 
+    def __str__(self):
+        return str(self.block) + ', Секция ' + str(self.number)
+
     @classmethod
-    def get_next(cls, house: House):
-        objects = cls.objects.filter(house=house)
+    def get_next(cls, block: Block):
+        objects = cls.objects.filter(block=block)
         if objects:
             last = objects.last().number
             return last + 1
         return 1
 
-    def __str__(self):
-        return str(self.house) + ', Секция ' + str(self.number)
+    @property
+    def user(self):
+        return self.block.user
 
 
 class Floor(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
     number = PositiveSmallIntegerField(verbose_name='Этаж')
+
+    def __str__(self):
+        return str(self.section) + ', Этаж ' + str(self.number)
 
     @classmethod
     def get_next(cls, section: Section):
@@ -296,30 +342,113 @@ class Floor(Model):
             return last + 1
         return 1
 
-    def __str__(self):
-        return str(self.section) + ', Этаж ' + str(self.number)
+    @property
+    def user(self):
+        return self.section.user
 
 
 class Standpipe(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
-    number = PositiveSmallIntegerField(verbose_name='Этаж')
+    number = PositiveSmallIntegerField(verbose_name='Стояк')
+
+    @property
+    def user(self):
+        return self.section.user
 
 
-class HouseDoc(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
-    file = FileField(upload_to='documents/', verbose_name='Файл')
+class Apartment(Model):
+    DOC_TYPE = (
+        ('OWNERSHIP', 'Документ собственности'),
+        ('POA', 'Доверенность')
+    )
+    APART_TYPE = (
+        ('APARTMENT', 'Апартаменты'),
+        ('PENTHOUSE', 'Пентхаус')
+    )
+    APART_STATUS = (
+        ('SHELL', 'Черновая'),
+        ('EURO', 'Евроремонт'),
+        ('REPAIR', 'Требует ремонта'),
+        ('FULL REPAIR', 'Требуется капитальный ремонт'),
+    )
+    APART_LAYOUT = (
+        ('STUDIO', 'Студия, санузел'),
+        ('GUEST', 'Гостинка'),
+        ('SMALL', 'Малосемейка'),
+        ('ISOLATED', 'Изолированные комнаты'),
+        ('ADJOINING', 'Смежные комнаты'),
+        ('FREE', 'Свободная планировка'),
+    )
+    HEATING_TYPE = (
+        ('GAS', 'Газовое'),
+        ('WOOD', 'Дрова')
+    )
+
+    house = ForeignKey(House, on_delete=CASCADE, null=True, verbose_name='ЖК')
+    block = ForeignKey(Block, on_delete=CASCADE, blank=True, null=True, verbose_name='Корпус')
+    section = ForeignKey(Section, on_delete=CASCADE, blank=True, null=True, verbose_name='Секция')
+    floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
+    standpipe = ForeignKey(Standpipe, on_delete=CASCADE, blank=True, null=True, verbose_name='Стояк')
+    number = PositiveSmallIntegerField(verbose_name='Номер квартиры')
+    document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
+    address = CharField(max_length=255, blank=True, null=True, verbose_name='Адрес')
+    rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
+    apart_type = CharField(max_length=9, choices=APART_TYPE, verbose_name='Назначение')
+    apart_status = CharField(max_length=11, choices=APART_STATUS, verbose_name='Жилое состояние')
+    apart_layout = CharField(max_length=9, choices=APART_LAYOUT, verbose_name='Планировка')
+    apart_area = FloatField(verbose_name='Общая площадь')
+    kitchen_area = FloatField(verbose_name='Площадь кухни')
+    loggia = BooleanField(default=False, verbose_name='Балкон/лоджия')
+    heating = CharField(max_length=4, choices=HEATING_TYPE, verbose_name='Отопление')
+    client = ForeignKey(User, on_delete=SET_NULL, blank=True, null=True, verbose_name='Клиент')
+    booked = BooleanField(default=False, verbose_name='Забронирована')
+    owned = BooleanField(default=False, verbose_name='Выкуплена')
 
     def __str__(self):
-        return str(self.house)
+        return str(self.floor)
+
+    @property
+    def booking_status(self):
+        return 'Booked' if self.booked else 'Free'
+
+    @property
+    def user(self):
+        return self.floor.user
+
+    class Meta:
+        ordering = ['-id']
 
 
-class HouseNew(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
-    title = CharField(max_length=255, verbose_name='Заголовок новости')
-    description = TextField(verbose_name='Описание новости')
+class ApartImg(Model):
+    apart = ForeignKey(Apartment, on_delete=CASCADE, verbose_name='Квартира')
+    image = ImageField(upload_to='apartments/', verbose_name='Фото')
 
     def __str__(self):
-        return str(self.house) + ', ' + str(self.title)
+        return str(self.apart)
+
+    @property
+    def user(self):
+        return self.apart.user
+
+    def get_files(self):
+        return [self.image]
+
+
+class RequestToChess(Model):
+    house = ForeignKey(House, on_delete=CASCADE)
+    apart = ForeignKey(Apartment, on_delete=CASCADE)
+    created = DateTimeField(auto_now_add=True)
+    approved = BooleanField(default=False)
+
+    @property
+    def user(self):
+        return self.house.user
+
+
+class Message(Model):
+    sender = ForeignKey(User, on_delete=CASCADE, related_name='sender')
+    recipient = ForeignKey(User, on_delete=CASCADE, related_name='recipient')
+    text = TextField()
 
 
 class Promotion(Model):
@@ -353,33 +482,7 @@ class Promotion(Model):
         return str(self.type) + ' , ' + str(self.phrase) + ' , ' + str(self.color)
 
 
-class Apartment(Model):
-    DOC_TYPE = (
-        ('OWNERSHIP', 'Документ собственности'),
-        ('POA', 'Доверенность')
-    )
-    APART_TYPE = (
-        ('APARTMENT', 'Апартаменты'),
-        ('PENTHOUSE', 'Пентхаус')
-    )
-    APART_STATUS = (
-        ('SHELL', 'Черновая'),
-        ('EURO', 'Евроремонт'),
-        ('REPAIR', 'Требует ремонта'),
-        ('FULL REPAIR', 'Требуется капитальный ремонт'),
-    )
-    APART_LAYOUT = (
-        ('STUDIO', 'Студия, санузел'),
-        ('GUEST', 'Гостинка'),
-        ('SMALL', 'Малосемейка'),
-        ('ISOLATED', 'Изолированные комнаты'),
-        ('ADJOINING', 'Смежные комнаты'),
-        ('FREE', 'Свободная планировка'),
-    )
-    HEATING_TYPE = (
-        ('GAS', 'Газовое'),
-        ('WOOD', 'Дрова')
-    )
+class Post(Model):
     PAY_TYPE = (
         ('CAPITAL', 'Мат. капитал'),
         ('MORTGAGE', 'Ипотека'),
@@ -391,57 +494,61 @@ class Apartment(Model):
         ('CALL&MES', 'Звонок + сообщение')
     )
 
-    house = ForeignKey(House, on_delete=CASCADE, null=True, verbose_name='ЖК')
-    floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
-    document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
-    address = CharField(max_length=255, blank=True, null=True, verbose_name='Адрес')
-    rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
-    apart_type = CharField(max_length=9, choices=APART_TYPE, verbose_name='Назначение')
-    apart_status = CharField(max_length=11, choices=APART_STATUS, verbose_name='Жилое состояние')
-    apart_layout = CharField(max_length=9, choices=APART_LAYOUT, verbose_name='Планировка')
-    apart_area = FloatField(verbose_name='Общая площадь')
-    kitchen_area = FloatField(verbose_name='Площадь кухни')
-    loggia = BooleanField(default=False, verbose_name='Балкон/лоджия')
-    heating = CharField(max_length=4, choices=HEATING_TYPE, verbose_name='Отопление')
     payment = CharField(max_length=8, choices=PAY_TYPE, verbose_name='Варианты расчёта')
     contact = CharField(max_length=12, choices=CONTACT_TYPE, verbose_name='Способ связи')
-    promotion = ForeignKey(Promotion, on_delete=CASCADE, blank=True, null=True, verbose_name='Продвижение')
+    promotion = ForeignKey('Promotion', on_delete=CASCADE, blank=True, null=True, verbose_name='Продвижение')
     commission = FloatField(verbose_name='Комиссия агенту')
     description = TextField(verbose_name='Описание')
     price = FloatField(verbose_name='Цена')
     is_actual = BooleanField(default=False, verbose_name='Актуально')
-    owner = ForeignKey(User, on_delete=CASCADE, blank=True, null=True, verbose_name='Владелец объявления')
-    created = DateTimeField(auto_now=True, null=True)
+    owner = ForeignKey(User, on_delete=CASCADE, blank=True, null=True, verbose_name='Владелец объявления',
+                       related_name='Apart_Owner')
+    created = DateTimeField(auto_now=True, null=True, verbose_name='Дата создания')
+
+    house = ForeignKey(House, related_name='posts', on_delete=CASCADE, verbose_name='ЖК')
+    apart = ForeignKey(Apartment, related_name='posts', on_delete=CASCADE, verbose_name='Квартира')
+    user = ForeignKey(User, related_name='posts', on_delete=CASCADE, verbose_name='Пользователь')
+
+    rejected = BooleanField(default=False, verbose_name='Отклонено')
+    reject_message = ForeignKey('Complaint', on_delete=DO_NOTHING, blank=True, null=True,
+                                related_name='Post_complaint', verbose_name='Жалоба')
 
     def __str__(self):
-        return str(self.floor)
+        return str(self.house) + ' , ' + str(self.apart)
 
-    class Meta:
-        ordering = ['-created']
-
-
-class HouseImg(Model):
-    house = ForeignKey(House, on_delete=CASCADE, verbose_name='ЖК')
-    image = ImageField(upload_to='houses/', verbose_name='Фото')
-
-    def __str__(self):
-        return str(self.house)
+    @classmethod
+    def get_next_number(cls):
+        last = cls.objects.last()
+        if last:
+            return last.number + 1
+        return 1
 
 
-class ApartImg(Model):
-    apart = ForeignKey(Apartment, on_delete=CASCADE, verbose_name='Квартира')
-    image = ImageField(upload_to='apartments/', verbose_name='Фото')
+class PostImage(Model):
+    post = ForeignKey(Post, on_delete=CASCADE)
+    image = ImageField(upload_to='posts/')
 
-    def __str__(self):
-        return str(self.apart)
+    @property
+    def user(self):
+        return self.post.user
+
+    def get_files(self):
+        return [self.image]
 
 
-class UserApart(Model):
+class Complaint(Model):
+    REASON = (
+        ('PRICE', 'Некорректная цена'),
+        ('PHOTO', 'Некорректное фото'),
+        ('DESC', 'Некорректное описание'),
+        ('ANY', 'Другое')
+    )
+    post = ForeignKey(Post, on_delete=CASCADE)
+    created = DateTimeField(auto_now_add=True)
     user = ForeignKey(User, on_delete=CASCADE)
-    apart = ForeignKey(Apartment, on_delete=CASCADE)
+    reason = CharField(choices=REASON, max_length=5)
+    description = TextField(blank=True, null=True)
+    rejected = BooleanField(default=False)
 
-
-class Message(Model):
-    sender = ForeignKey(User, on_delete=CASCADE, related_name='sender')
-    recipient = ForeignKey(User, on_delete=CASCADE, related_name='recipient')
-    text = TextField()
+    def __str__(self):
+        return self.description

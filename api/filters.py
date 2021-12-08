@@ -25,7 +25,7 @@ class ApartFilter(filters.FilterSet):
     class Meta:
         model = Apartment
         fields = ['rooms', 'min_price', 'max_price', 'min_apart_area', 'max_apart_area',
-                  'apart_type', 'apart_status', 'apart_layout', 'payment', 'owner']
+                  'apart_type', 'apart_status', 'apart_layout']
 
 
 class ContactListFilter(filters.FilterSet):
