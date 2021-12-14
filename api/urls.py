@@ -15,7 +15,6 @@ urlpatterns = [
     path('registration/', views.RegistrationAPIView.as_view(), name='registration'),
     path('login/', views.authenticate_by_phone, name='phone_login'),
     path('send/', views.send_sms, name='sms'),
-    path('login_email/', views.authenticate_by_email, name='email_login'),
     path('house/create', views.HouseViewSet.as_view(({'get': 'create'})), name='house-viewset'),
     path('houses/', views.HousePublic.as_view(({'get': 'list'})), name='houses-list'),
     path('apartments/', views.ApartPublic.as_view({'get': 'list'}), name='apartment-list'),

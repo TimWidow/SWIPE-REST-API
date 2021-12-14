@@ -1,35 +1,34 @@
 import mimetypes
+
 import jwt
-from django.contrib.auth import user_logged_in
+from dj_rest_auth.app_settings import JWTSerializer, TokenSerializer
+from dj_rest_auth.models import TokenModel
+from dj_rest_auth.utils import jwt_encode
 from django.contrib.auth import (
     login as django_login,
     logout as django_logout
 )
+from django.contrib.auth import user_logged_in
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.encoding import escape_uri_path
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
-from django.utils.translation import ugettext_lazy as _
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView
+from rest_framework.generics import *
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin
+from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework_jwt.serializers import jwt_payload_handler
-from rest_auth.app_settings import create_token
-from rest_auth.serializers import *
-from rest_auth.utils import jwt_encode
-from rest_auth.models import TokenModel
+
 from swipe import settings
 from . import filters as my_filter
-from rest_framework.generics import *
 from .filters import *
 from .permissions import *
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
 from .serializers import *
 from .verify import send
 
@@ -38,6 +37,11 @@ sensitive_post_parameters_m = method_decorator(
         'password', 'old_password', 'new_password1', 'new_password2'
     )
 )
+
+
+def create_token(token_model, user):
+    token, _ = token_model.objects.get_or_create(user=user)
+    return token
 
 
 class RegistrationAPIView(GenericAPIView):
@@ -100,8 +104,7 @@ class APILoginView(GenericAPIView):
         if getattr(settings, 'REST_USE_JWT', False):
             self.token = jwt_encode(self.user)
         else:
-            self.token = create_token(self.token_model, self.user,
-                                      self.serializer)
+            self.token = create_token(self.token_model, self.user)
 
         if getattr(settings, 'REST_SESSION_LOGIN', True):
             self.process_login()
@@ -121,15 +124,7 @@ class APILoginView(GenericAPIView):
                                           context={'request': self.request})
 
         response = Response(serializer.data, status=status.HTTP_200_OK)
-        if getattr(settings, 'REST_USE_JWT', False):
-            from rest_framework_jwt.settings import api_settings as jwt_settings
-            if jwt_settings.JWT_AUTH_COOKIE:
-                from datetime import datetime
-                expiration = (datetime.utcnow() + jwt_settings.JWT_EXPIRATION_DELTA)
-                response.set_cookie(jwt_settings.JWT_AUTH_COOKIE,
-                                    self.token,
-                                    expires=expiration,
-                                    httponly=True)
+
         return response
 
     def post(self, request, *args, **kwargs):
@@ -173,7 +168,8 @@ class APILogoutView(APIView):
     def post(self, request, *args, **kwargs):
         return self.logout(request)
 
-    def logout(self, request):
+    @staticmethod
+    def logout(request):
         try:
             request.user.auth_token.delete()
         except (AttributeError, ObjectDoesNotExist):
@@ -183,42 +179,7 @@ class APILogoutView(APIView):
 
         response = Response({"detail": _("Successfully logged out.")},
                             status=status.HTTP_200_OK)
-        if getattr(settings, 'REST_USE_JWT', False):
-            from rest_framework_jwt.settings import api_settings as jwt_settings
-            if jwt_settings.JWT_AUTH_COOKIE:
-                response.delete_cookie(jwt_settings.JWT_AUTH_COOKIE)
         return response
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny, ])
-def authenticate_by_email(request):
-    print(request.data)
-    try:
-        email = request.data['email']
-        password = request.data['password']
-        user = auth.EmailAuthBackend.authenticate(email=email, password=password)
-        if user:
-            try:
-                payload = jwt_payload_handler(user)
-                print(payload)
-                token = jwt.encode(payload, settings.SECRET_KEY)
-                user_details = {'name': (
-                    user.first_name), 'token': token}
-                user_logged_in.send(sender=user.__class__,
-                                    request=request, user=user)
-                return Response(user_details, status=status.HTTP_200_OK)
-
-            except Exception as error:
-                print(error)
-                raise error
-        else:
-            res = {
-                'error': 'can not authenticate with the given credentials or the account has been deactivated'}
-            return Response(res, status=status.HTTP_403_FORBIDDEN)
-    except KeyError:
-        res = {'error': 'please provide a email and a password'}
-        return Response(res)
 
 
 @api_view(['POST'])

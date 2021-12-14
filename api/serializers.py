@@ -4,7 +4,7 @@ import pytz as pytz
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from rest_framework.serializers import *
 from . import auth
 from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe, HouseNew, HouseDoc, RequestToChess, \

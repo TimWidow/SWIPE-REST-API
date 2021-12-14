@@ -1,7 +1,6 @@
 import debug_toolbar
 from django.urls import include, path
 from django.conf.urls.static import static
-from rest_auth.views import LoginView
 
 from api.views import APILoginView
 from rest_framework_swagger.views import get_swagger_view
