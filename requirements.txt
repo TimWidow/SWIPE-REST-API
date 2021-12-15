@@ -95,7 +95,6 @@ PyGoogleVoice==0.5.2
 PyJWT==2.3.0
 pyotp==2.6.0
 pyparsing==3.0.6
-pypiwin32==223
 Pyrebase4==4.5.0
 python-decouple==3.5
 python-dotenv==0.19.2
