@@ -1,4 +1,5 @@
 from datetime import datetime
+from importlib import import_module
 
 import pytz as pytz
 from django.shortcuts import get_object_or_404
@@ -6,9 +7,12 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework.serializers import *
+from six import string_types
+from phonenumber_field.serializerfields import PhoneNumberField
 from . import auth
 from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe, HouseNew, HouseDoc, RequestToChess, \
     Block
+from .verify import check
 
 
 def import_callable(path_or_callable):
@@ -51,7 +55,7 @@ class PhoneAuthenticationSerializer(Serializer):
     def update(self, instance, validated_data):
         pass
 
-    phone = IntegerField(write_only=True)
+    phone = PhoneNumberField(write_only=True)
 
     # Ignore these fields if they are included in the request.
     token = CharField(max_length=255, read_only=True)
@@ -64,7 +68,7 @@ class PhoneAuthenticationSerializer(Serializer):
 
         if phone is None:
             raise ValidationError(
-                'An email address is required to log in.'
+                'An phone number is required to log in.'
             )
 
         user = auth.PhoneAuthBackend.authenticate(phone=phone)
@@ -80,7 +84,7 @@ class PhoneAuthenticationSerializer(Serializer):
             )
 
         return {
-            'token': user.token,
+            'user': user,
         }
 
 
@@ -126,6 +130,71 @@ class APILoginSerializer(Serializer):
             if email:
                 try:
                     User.objects.get(email__iexact=email)
+                except User.DoesNotExist:
+                    pass
+
+        # Did we get back an active user?
+        if user:
+            if not user.is_active:
+                msg = _('User account is disabled.')
+                raise ValidationError(msg)
+        else:
+            msg = _('Unable to log in with provided credentials.')
+            raise ValidationError(msg)
+
+        # If required, is the email verified?
+        if 'rest_auth.registration' in settings.INSTALLED_APPS:
+            email_address = user.emailaddress_set.get(email=user.email)
+            if not email_address.verified:
+                raise ValidationError(_('E-mail is not verified.'))
+
+        attrs['user'] = user
+        return attrs
+
+
+class PhoneLoginSerializer(Serializer):
+    """
+    Authenticates an existing user.
+    Phone number is required.
+    Returns a JSON web token.
+    """
+    phone = PhoneNumberField(required=False, allow_blank=True)
+    code = IntegerField(write_only=True)
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    def authenticate(self, **kwargs):
+        return authenticate(self.context['request'], **kwargs)
+
+    @staticmethod
+    def _validate_phone(phone, code):
+
+        if check(phone, code):
+            user = User.objects.get(phone=phone)
+        else:
+            msg = _('Wrong code, try again')
+            raise ValidationError(msg)
+
+        return user
+
+    def validate(self, attrs):
+        phone = attrs.get('phone')
+        code = attrs.get('code')
+
+        user = None
+
+        if 'allauth' in settings.INSTALLED_APPS:
+            user = self._validate_phone(phone, code)
+
+        else:
+            # Authentication without using allauth
+            if phone:
+                try:
+                    User.objects.get(phone__iexact=phone)
                 except User.DoesNotExist:
                     pass
 

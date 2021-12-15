@@ -6,12 +6,12 @@ verify = client.verify.services('VA862953786dba5d5dd8398d14e6f0de31')
 
 
 def send(phone):
-    verify.verifications.create(to=phone, channel='sms')
+    verify.verifications.create(to=str(phone), channel='sms')
 
 
 def check(phone, code):
     try:
-        result = verify.verification_checks.create(to=phone, code=code)
+        result = verify.verification_checks.create(to=str(phone), code=str(code))
         print(result.status)
     except TwilioRestException as error:
         print(error)
@@ -19,4 +19,4 @@ def check(phone, code):
     return result.status == 'approved'
 
 
-print(check('+380662863099', '4804'))
+print(check('+380662863099', '5151'))

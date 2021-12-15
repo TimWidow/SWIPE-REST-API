@@ -2,7 +2,7 @@ import debug_toolbar
 from django.urls import include, path
 from django.conf.urls.static import static
 
-from api.views import APILoginView
+from api.views import APILoginView, APILogoutView
 from rest_framework_swagger.views import get_swagger_view
 
 from swipe.settings import MEDIA_ROOT, MEDIA_URL
@@ -34,6 +34,8 @@ urlpatterns = [path('', swagger_view),
                path('api/', include('api.urls')),
                path('api-auth/', include('rest_framework.urls')),  # For logins
                path('accounts/login/', APILoginView.as_view()),
+               path('accounts/logout/', APILogoutView.as_view()),
+               # path('?next=/', APILogoutView.as_view()),
                path('dj-rest-auth/', include('dj_rest_auth.urls')),
                path('admin/', admin.site.urls),
                path('__debug__/', include(debug_toolbar.urls)),

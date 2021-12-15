@@ -138,14 +138,88 @@ class APILoginView(GenericAPIView):
 
 
 class PhoneAuthenticationView(GenericAPIView):
+    permission_classes = (AllowAny,)
     serializer_class = PhoneAuthenticationSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = PhoneAuthenticationSerializer(data=self.request.data)
+
         if serializer.is_valid():
+            print(serializer.validated_data)
             user = serializer.validated_data['user']
-            return Response({'token': user.auth_token.key}, status=status.HTTP_200_OK)
+            if user:
+                send(user.phone)
+                return Response({'sms': 'sent'}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class PhoneLoginView(GenericAPIView):
+    """
+        Check the credentials and return the REST Token
+        if the credentials are valid and authenticated.
+        Calls Django Auth login method to register User ID
+        in Django session framework
+
+        Accept the following POST parameters: email, password
+        Return the REST Framework Token Object's key.
+        """
+    permission_classes = (AllowAny,)
+    serializer_class = PhoneLoginSerializer
+    token_model = TokenModel
+
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super(PhoneLoginView, self).dispatch(*args, **kwargs)
+
+    def process_login(self):
+        django_login(self.request, self.user, backend='django.contrib.auth.backends.ModelBackend')
+
+    @staticmethod
+    def get_response_serializer():
+        if getattr(settings, 'REST_USE_JWT', False):
+            response_serializer = JWTSerializer
+        else:
+            response_serializer = TokenSerializer
+        return response_serializer
+
+    def login(self):
+        self.user = self.serializer.validated_data['user']
+
+        if getattr(settings, 'REST_USE_JWT', False):
+            self.token = jwt_encode(self.user)
+        else:
+            self.token = create_token(self.token_model, self.user)
+
+        if getattr(settings, 'REST_SESSION_LOGIN', True):
+            self.process_login()
+
+    def get_response(self):
+        serializer_class = self.get_response_serializer()
+
+        if getattr(settings, 'REST_USE_JWT', False):
+            data = {
+                'user': self.user,
+                'token': self.token
+            }
+            serializer = serializer_class(instance=data,
+                                          context={'request': self.request})
+        else:
+            serializer = serializer_class(instance=self.token,
+                                          context={'request': self.request})
+
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+
+        return response
+
+    def post(self, request, *args, **kwargs):
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data,
+                                              context={'request': request})
+        self.serializer.is_valid(raise_exception=True)
+
+        self.login()
+        return self.get_response()
 
 
 class APILogoutView(APIView):
@@ -180,46 +254,6 @@ class APILogoutView(APIView):
         response = Response({"detail": _("Successfully logged out.")},
                             status=status.HTTP_200_OK)
         return response
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny, ])
-def send_sms(request):
-    print(request.data)
-    phone = request.data['phone']
-    send(phone)
-    return Response(status=status.HTTP_200_OK)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny, ])
-def authenticate_by_phone(request):
-    print(request.data)
-    try:
-        phone = request.data['phone']
-        user = auth.PhoneAuthBackend.authenticate(phone=phone)
-
-        if user:
-            try:
-                payload = jwt_payload_handler(user)
-                print(payload)
-                token = jwt.encode(payload, settings.SECRET_KEY)
-                user_details = {'name': (
-                    user.first_name), 'token': token}
-                user_logged_in.send(sender=user.__class__,
-                                    request=request, user=user)
-                return Response(user_details, status=status.HTTP_200_OK)
-
-            except Exception as error:
-                print(error)
-                raise error
-        else:
-            res = {
-                'error': 'can not authenticate with the given credentials or the account has been deactivated'}
-            return Response(res, status=status.HTTP_403_FORBIDDEN)
-    except KeyError:
-        res = {'error': 'please provide a phone number'}
-        return Response(res)
 
 
 class ApartmentList(ListAPIView):

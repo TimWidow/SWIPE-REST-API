@@ -11,10 +11,10 @@ router = routers.SimpleRouter()
 urlpatterns = [
     path('google_login/', TemplateView.as_view(template_name="index.html")),
     path('google_accounts/', include('allauth.urls')),
-    path('google_logout/', LogoutView.as_view()),
+    path('logout/', LogoutView.as_view()),
     path('registration/', views.RegistrationAPIView.as_view(), name='registration'),
-    path('login/', views.authenticate_by_phone, name='phone_login'),
-    path('send/', views.send_sms, name='sms'),
+    path('login/', views.PhoneAuthenticationView.as_view(), name='phone_login'),
+    path('verify/', views.PhoneLoginView.as_view(), name='sms_verification'),
     path('house/create', views.HouseViewSet.as_view(({'get': 'create'})), name='house-viewset'),
     path('houses/', views.HousePublic.as_view(({'get': 'list'})), name='houses-list'),
     path('apartments/', views.ApartPublic.as_view({'get': 'list'}), name='apartment-list'),
