@@ -11,6 +11,15 @@ from .models import User, Promotion, Apartment, Floor, House, Section, Standpipe
     Block
 
 
+def import_callable(path_or_callable):
+    if hasattr(path_or_callable, '__call__'):
+        return path_or_callable
+    else:
+        assert isinstance(path_or_callable, string_types)
+        package, attr = path_or_callable.rsplit('.', 1)
+        return getattr(import_module(package), attr)
+
+
 class RegistrationSerializer(ModelSerializer):
     password = CharField(
         max_length=128,
@@ -139,6 +148,43 @@ class APILoginSerializer(Serializer):
         return attrs
 
 
+class UserDetailsSerializer(ModelSerializer):
+    """
+    User model w/o password
+    """
+
+    class Meta:
+        model = User
+        fields = ('pk', 'phone', 'email', 'first_name', 'last_name')
+        read_only_fields = ('email',)
+
+
+class JWTSerializer(Serializer):
+    """
+    Serializer for JWT authentication.
+    """
+    token = CharField()
+    user = SerializerMethodField()
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    def get_user(self, obj):
+        """
+        Required to allow using custom USER_DETAILS_SERIALIZER in
+        JWTSerializer. Defining it here to avoid circular imports
+        """
+        rest_auth_serializers = getattr(settings, 'REST_AUTH_SERIALIZERS', {})
+        JWTUserDetailsSerializer = import_callable(
+            rest_auth_serializers.get('USER_DETAILS_SERIALIZER', UserDetailsSerializer)
+        )
+        user_data = JWTUserDetailsSerializer(obj['user'], context=self.context).data
+        return user_data
+
+
 class PromotionSerializer(ModelSerializer):
     class Meta:
         model = Promotion
@@ -258,6 +304,7 @@ class HouseSerializer(ModelSerializer):
     block_count = SerializerMethodField()
     section_count = SerializerMethodField()
     floor_count = SerializerMethodField()
+
     # Apartment_count = SerializerMethodField()
 
     class Meta:

@@ -1,7 +1,7 @@
 import mimetypes
 
 import jwt
-from dj_rest_auth.app_settings import JWTSerializer, TokenSerializer
+from dj_rest_auth.app_settings import TokenSerializer
 from dj_rest_auth.models import TokenModel
 from dj_rest_auth.utils import jwt_encode
 from django.contrib.auth import (
