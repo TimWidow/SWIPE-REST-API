@@ -251,7 +251,7 @@ class APILogoutView(APIView):
         if getattr(settings, 'REST_SESSION_LOGIN', True):
             django_logout(request)
 
-        response = Response({"detail": _("Successfully logged out.")},
+        response = Response({"detail": "Successfully logged out."},
                             status=status.HTTP_200_OK)
         return response
 

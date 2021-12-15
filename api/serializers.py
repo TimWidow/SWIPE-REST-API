@@ -159,7 +159,7 @@ class PhoneLoginSerializer(Serializer):
     Returns a JSON web token.
     """
     phone = PhoneNumberField(required=False, allow_blank=True)
-    code = IntegerField(write_only=True)
+    code = CharField(max_length=4)
 
     def create(self, validated_data):
         pass
