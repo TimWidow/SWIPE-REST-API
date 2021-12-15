@@ -326,7 +326,7 @@ class UserCreate(CreateAPIView):
 
 
 class PromoCreate(CreateAPIView):
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     serializer_class = PromotionSerializer
 
 
