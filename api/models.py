@@ -351,6 +351,9 @@ class Standpipe(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
     number = PositiveSmallIntegerField(verbose_name='Стояк')
 
+    def __str__(self):
+        return str(self.section) + ', Стояк ' + str(self.number)
+
     @property
     def user(self):
         return self.section.user
