@@ -17,12 +17,9 @@ class ApartmentSerializerTestCase(TestCase):
         print(data)
         exp_data = [
             {'house': None,
-             'block': None,
              'floor': None,
-             'section': None,
              'document': 'OWNERSHIP',
              'address': 'Test address',
-             'number': 1,
              'rooms': 1,
              'apart_type': 'APARTMENT',
              'apart_status': 'SHELL',

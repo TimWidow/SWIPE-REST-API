@@ -304,7 +304,7 @@ class Block(Model):
         return self.house.user
 
     def __str__(self):
-        return str(self.house) + 'Корпус ' + str(self.number)
+        return str(self.house) + ', Корпус ' + str(self.number)
 
 
 class Section(Model):
@@ -413,7 +413,10 @@ class Apartment(Model):
 
     @property
     def user(self):
-        return self.floor.user
+        try:
+            return self.floor.user
+        except Exception as error:
+            print(error)
 
     class Meta:
         ordering = ['-id']
