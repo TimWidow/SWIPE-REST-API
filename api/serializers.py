@@ -515,20 +515,28 @@ class ApartSerializer(ModelSerializer):
 
     @staticmethod
     def get_sales_department_pk(obj):
-        return obj.user.pk
+        try:
+            return obj.user.pk
+        except Exception as error:
+            print(error)
 
     @staticmethod
     def get_floor_display(obj):
         print(obj)
-        floor = obj.floor
-        section = floor.section
-        block = section.block
-        return f'Корпус {block.number}, Секция {section.number}, Этаж {floor.number}'
+        try:
+            floor = obj.floor
+            section = floor.section
+            block = section.block
+            return f"Корпус {block.number}, Секция {section.number}, Этаж {floor.number}"
+        except Exception as error:
+            print(error)
 
     @staticmethod
     def get_house_pk(obj):
-        return obj.floor.section.block.house.pk
-
+        try:
+            return obj.floor.section.block.house.pk
+        except Exception as error:
+            print(error)
 
 class HouseInRequestSerializer(ModelSerializer):
     role_display = CharField(source='get_role_display', read_only=True)
