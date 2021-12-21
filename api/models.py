@@ -213,7 +213,7 @@ class House(Model):
     )
     title = CharField(max_length=255, verbose_name='Название')
     city = CharField(max_length=255, verbose_name='Город')
-    address = CharField(max_length=255, verbose_name='Адрес')
+    address = CharField(max_length=255, unique=True, verbose_name='Адрес')
     description = TextField(blank=True, null=True, verbose_name='Инфраструктура ЖК')
     property_type = CharField(max_length=10, choices=PROPERTY_TYPE, verbose_name='Тип недвижимости')
     house_leased = CharField(max_length=10, choices=HOUSE_LEASED, verbose_name='Эксплуатация')
