@@ -28,7 +28,7 @@ class ApartmentSerializerTestCase(TestCase):
              'kitchen_area': 21.0,
              'loggia': True,
              'heating': 'GAS',
-             'client': None}
+             }
         ]
         print(exp_data)
         self.assertEqual(data, exp_data)

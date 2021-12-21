@@ -16,7 +16,8 @@ from ..serializers import ApartmentDetailSerializer
 class ApartmentTestCase(APITestCase):
     def setUp(self):
         self.user = models.User.objects.create(email='test@gmail.com',
-                                               password='123')
+                                               phone='+380501234567',
+                                               password='!@#$%^&*()')
         self.client.force_login(self.user)
         self.apartment = Apartment.objects.create(document='OWNERSHIP', number=1, address='Test address',
                                                   rooms=1, apart_type='APARTMENT',

@@ -1,10 +1,8 @@
 import debug_toolbar
 from django.urls import include, path
 from django.conf.urls.static import static
-
 from api.views import APILoginView, APILogoutView
 from rest_framework_swagger.views import get_swagger_view
-
 from swipe.settings import MEDIA_ROOT, MEDIA_URL
 from django.contrib import admin
 from rest_framework import permissions

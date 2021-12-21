@@ -273,13 +273,13 @@ class ApartmentDetailSerializer(ModelSerializer):
         model = Apartment
         fields = (
             'house', 'floor', 'document', 'address', 'rooms', 'apart_type', 'apart_status', 'apart_layout',
-            'apart_area', 'kitchen_area', 'loggia', 'heating', 'client')
+            'apart_area', 'kitchen_area', 'loggia', 'heating')
 
 
 class ApartmentCreateSerializer(ModelSerializer):
     class Meta:
         model = Apartment
-        fields = ['house', 'floor', 'rooms', 'document', 'apart_type', 'apart_status', 'apart_layout',
+        fields = ['house', 'floor', 'rooms', 'number', 'document', 'apart_type', 'apart_status', 'apart_layout',
                   'apart_area', 'kitchen_area', 'loggia', 'heating']
 
     def create(self, validated_data):
@@ -290,6 +290,24 @@ class FloorListSerializer(ModelSerializer):
     class Meta:
         model = Floor
         fields = ('section', 'number')
+
+
+class BlockCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Block
+        fields = ['house', 'number']
+
+    def create(self, validated_data):
+        return Block.objects.create(**validated_data)
+
+
+class SectionCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ['block', 'number']
+
+    def create(self, validated_data):
+        return Section.objects.create(**validated_data)
 
 
 class FloorCreateSerializer(ModelSerializer):
@@ -332,8 +350,45 @@ class ContactSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class HouseCreateSerializer(ModelSerializer):
+    class Meta:
+        model = House
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return House.objects.create(**validated_data)
+
+
 class HouseDetailSerializer(ModelSerializer):
     manager = ContactSerializer()
+    title = CharField(max_length=255, read_only=True)
+    city = CharField(max_length=255, write_only=True)
+    address = CharField(max_length=255, write_only=True)
+    description = CharField(write_only=True)
+    property_type = CharField(max_length=10)
+    house_leased = CharField(max_length=10)
+    house_status = CharField(max_length=10)
+    house_type = CharField(max_length=10)
+    technology = CharField(max_length=10)
+    territory = CharField(max_length=10)
+    sea = FloatField()
+    ceiling = FloatField()
+    gas = BooleanField()
+    electricity = BooleanField()
+    heating = CharField(max_length=8)
+    sewerage = CharField(max_length=8)
+    water = CharField(max_length=8)
+    doc_options = CharField(max_length=255)
+    pay_options = CharField(max_length=255)
+    status = CharField(max_length=255)
+    contract_amount = CharField(max_length=255)
+    sales_department = ContactSerializer()
+    # Benefits
+    playground = BooleanField()
+    parking = BooleanField()
+    shop = BooleanField()
+    elevator = BooleanField()
+    security = BooleanField()
 
     class Meta:
         model = House
@@ -537,6 +592,7 @@ class ApartSerializer(ModelSerializer):
             return obj.floor.section.block.house.pk
         except Exception as error:
             print(error)
+
 
 class HouseInRequestSerializer(ModelSerializer):
     role_display = CharField(source='get_role_display', read_only=True)

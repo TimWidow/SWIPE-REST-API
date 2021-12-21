@@ -182,7 +182,7 @@ class House(Model):
     HOUSE_STATUS = (
         ('ECO', 'Эконом'),
         ('COMFORT', 'Комфорт'),
-        ('COMFORT', 'Бизнес'),
+        ('BUSINESS', 'Бизнес'),
         ('ELITE', 'Элитный'),
     )
     HOUSE_TYPE = (
@@ -208,7 +208,7 @@ class House(Model):
         ('PIT', 'Яма')
     )
     WATER = (
-        ('SEWERAGE', 'Центральное'),
+        ('CENTRAL', 'Центральное'),
         ('AUTO', 'Автономное')
     )
     title = CharField(max_length=255, verbose_name='Название')
@@ -289,7 +289,7 @@ class HouseNew(Model):
 
 class Block(Model):
     house = ForeignKey(House, on_delete=CASCADE)
-    number = PositiveSmallIntegerField(verbose_name='Корпус')
+    number = PositiveSmallIntegerField(unique=True, verbose_name='Корпус')
 
     @classmethod
     def get_next(cls, house: House):
@@ -309,7 +309,7 @@ class Block(Model):
 
 class Section(Model):
     block = ForeignKey(Block, on_delete=CASCADE)
-    number = PositiveSmallIntegerField(verbose_name='Секция')
+    number = PositiveSmallIntegerField(unique=True, verbose_name='Секция')
 
     def __str__(self):
         return str(self.block) + ', Секция ' + str(self.number)
@@ -329,7 +329,7 @@ class Section(Model):
 
 class Floor(Model):
     section = ForeignKey(Section, on_delete=CASCADE)
-    number = PositiveSmallIntegerField(verbose_name='Этаж')
+    number = PositiveSmallIntegerField(unique=True, verbose_name='Этаж')
 
     def __str__(self):
         return str(self.section) + ', Этаж ' + str(self.number)
@@ -384,6 +384,7 @@ class Apartment(Model):
     )
     HEATING_TYPE = (
         ('GAS', 'Газовое'),
+        ('ELECTRO', 'Электрическое'),
         ('WOOD', 'Дрова')
     )
 
@@ -392,7 +393,7 @@ class Apartment(Model):
     section = ForeignKey(Section, on_delete=CASCADE, blank=True, null=True, verbose_name='Секция')
     floor = ForeignKey(Floor, on_delete=CASCADE, blank=True, null=True, verbose_name='Этаж')
     standpipe = ForeignKey(Standpipe, on_delete=CASCADE, blank=True, null=True, verbose_name='Стояк')
-    number = PositiveSmallIntegerField(verbose_name='Номер квартиры')
+    number = PositiveSmallIntegerField(unique=True, verbose_name='Номер квартиры')
     document = CharField(max_length=9, choices=DOC_TYPE, verbose_name='Документ')
     address = CharField(max_length=255, blank=True, null=True, verbose_name='Адрес')
     rooms = PositiveSmallIntegerField(verbose_name='Количество комнат')
@@ -402,7 +403,7 @@ class Apartment(Model):
     apart_area = FloatField(verbose_name='Общая площадь')
     kitchen_area = FloatField(verbose_name='Площадь кухни')
     loggia = BooleanField(default=False, verbose_name='Балкон/лоджия')
-    heating = CharField(max_length=4, choices=HEATING_TYPE, verbose_name='Отопление')
+    heating = CharField(max_length=7, choices=HEATING_TYPE, verbose_name='Отопление')
     client = ForeignKey(User, on_delete=SET_NULL, blank=True, null=True, verbose_name='Клиент')
     booked = BooleanField(default=False, verbose_name='Забронирована')
     owned = BooleanField(default=False, verbose_name='Выкуплена')

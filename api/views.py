@@ -270,20 +270,6 @@ class ApartmentDetail(RetrieveUpdateDestroyAPIView):
     serializer_class = ApartmentDetailSerializer
 
 
-class ApartmentCreate(CreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = ApartmentCreateSerializer
-
-    def perform_create(self, serializer):
-        serializer.validated_data['owner'] = self.request.user
-        serializer.save()
-
-
-class FloorCreate(CreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = FloorCreateSerializer
-
-
 class FloorList(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ApartmentListSerializer
@@ -347,6 +333,53 @@ class HouseAllViewSet(ListModelMixin,
         queryset = House.objects.all()
         serializer = HouseSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class HouseCreate(CreateAPIView):
+    """
+    "property_type" SECONDARY - Вторичный рынок, NEW - Новостройки, COTTAGE - Коттедж
+    "house_leased" LEASED - Сдан, NOT LEASED - Не сдан
+    "house_status" ECO - Эконом, COMFORT - Комфорт, COMFORT - Бизнес, ELITE - Элитный
+    "house_type" MULTI - Многоквартирный, PRIVATE - Частный
+    "technology" MONO - Монолитный, PANEL - Панельный, BRICK - Кирпич
+    "territory" CLOSED - Закрытая, OPEN - Открытая
+    "heating" CENTRAL - Центральное, PERSONAL - Индивидуальное
+    "sewerage" CENTRAL - Центральная, PIT - Яма
+    "water" CENTRAL - Центральное , AUTO - Автономное
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = HouseCreateSerializer
+
+
+class ApartmentCreate(CreateAPIView):
+    """
+       "document" OWNERSHIP - Документ собственности, POA - Доверенность
+       "apart_type" APARTMENT - Апартаменты, PENTHOUSE - Пентхаус
+       "apart_status" SHELL - Черновая, EURO - Евроремонт, REPAIR - Требует ремонта, FULL REPAIR - Требуется капитальный ремонт
+       "apart_layout" STUDIO - Студия, GUEST - Гостинка, SMALL - Малосемейка, ISOLATED - Изолированные комнаты, ADJOINING - Смежные комнаты, FREE - Свободная планировка
+       "heating" GAS - Газовое, ELECTRO - Электрическое, WOOD - Дрова
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ApartmentCreateSerializer
+
+    # def perform_create(self, serializer):
+    #    serializer.validated_data['owner'] = self.request.user
+    #    serializer.save()
+
+
+class BlockCreate(CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BlockCreateSerializer
+
+
+class SectionCreate(CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SectionCreateSerializer
+
+
+class FloorCreate(CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FloorCreateSerializer
 
 
 class SectionViewSet(ModelViewSet):
@@ -432,7 +465,7 @@ class DocumentViewSet(ModelViewSet):
         return self.generate_http_response_to_download(instance)
 
 
-class ApartViewSet(ModelViewSet):
+class ApartViewSet(GenericViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     queryset = Apartment.objects.all().order_by('-id')
     serializer_class = ApartSerializer
@@ -442,11 +475,12 @@ class ApartViewSet(ModelViewSet):
 
 
 class HouseViewSet(ModelViewSet):
+    """
+       Api is available for authenticated users
+       """
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     queryset = House.objects.all().order_by('-id')
-    serializer_class = HouseSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = HouseFilter
+    serializer_class = HouseDetailSerializer
     view_tags = ['Houses']
 
     def get_queryset(self):
@@ -465,6 +499,8 @@ class HousePublic(ListModelMixin,
     permission_classes = (AllowAny,)
     authentication_classes = []
     queryset = House.objects.all().order_by('-id')
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = HouseFilter
     serializer_class = HouseSerializer
     view_tags = ['Public-Houses']
 
@@ -473,7 +509,7 @@ class ApartPublic(ListModelMixin,
                   RetrieveModelMixin,
                   GenericViewSet):
     """
-    This api is available for anu users. Even if the are not authenticated
+    This api is available for any users. Even if they are not authenticated
     """
     permission_classes = (AllowAny,)
     authentication_classes = []
