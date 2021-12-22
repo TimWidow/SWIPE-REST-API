@@ -141,6 +141,9 @@ class APILoginView(GenericAPIView):
 
 
 class PhoneAuthenticationView(GenericAPIView):
+    """
+        Check the phone number and send SMS with 4-digit code
+    """
     permission_classes = (AllowAny,)
     serializer_class = PhoneAuthenticationSerializer
 
@@ -158,6 +161,9 @@ class PhoneAuthenticationView(GenericAPIView):
 
 
 class TokenAuthenticationView(GenericAPIView):
+    """
+        Check registration token and log in
+    """
     permission_classes = (AllowAny,)
     serializer_class = TokenAuthenticationSerializer
 
