@@ -230,21 +230,6 @@ if DEBUG_TOOLBAR:
 
 AUTHY_API_KEY = '8FDRj4VX0UO2b8BChgl7J7khVDXnDzJi'
 
-# Settings for phone_verify
-PHONE_VERIFICATION = {
-    'BACKEND': 'phone_verify.backends.twilio.TwilioBackend',
-    'TWILIO_SANDBOX_TOKEN': '123456',
-    'OPTIONS': {
-        'SID': 'fake',
-        'SECRET': 'fake',
-        'FROM': '+14755292729'
-    },
-    'TOKEN_LENGTH': 6,
-    'MESSAGE': 'Welcome to {app}! Please use security code {otp} to proceed.',
-    'APP_NAME': 'Phone Verify',
-    'OTP_EXPIRATION_TIME': 3600  # In seconds only
-}
-
 TWILIO_PHONE = config('TWILIO_PHONE', default=None)
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default=None)
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default=None)

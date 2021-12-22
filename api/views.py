@@ -59,11 +59,14 @@ class RegistrationAPIView(GenericAPIView):
         """
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        user = serializer.save()
+        print(user)
+        user.key = serializer.data.get('token', None)
+        user.save()
 
         return Response(
             {
-                'token': serializer.data.get('token', None),
+                'token': user.key,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -152,6 +155,34 @@ class PhoneAuthenticationView(GenericAPIView):
                 return Response({'sms': 'sent'}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class TokenAuthenticationView(GenericAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = TokenAuthenticationSerializer
+
+    def login(self, user):
+        django_login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+    def post(self, request, *args, **kwargs):
+        serializer = TokenAuthenticationSerializer(data=self.request.data)
+
+        if serializer.is_valid():
+            print(serializer.validated_data)
+            try:
+                user = serializer.validated_data['user']
+                if user:
+                    self.login(user)
+                    user.key = None
+                    user.save()
+                    return Response({str(user.phone): 'logged in'}, status=status.HTTP_200_OK)
+
+            except TypeError:
+                return Response(serializer.validated_data, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+
 
 
 class PhoneLoginView(GenericAPIView):

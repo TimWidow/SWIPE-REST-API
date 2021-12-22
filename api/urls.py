@@ -14,6 +14,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     path('registration/', views.RegistrationAPIView.as_view(), name='registration'),
     path('login/', views.PhoneAuthenticationView.as_view(), name='phone_login'),
+    path('login/token', views.TokenAuthenticationView.as_view(), name='token_login'),
     path('verify/', views.PhoneLoginView.as_view(), name='sms_verification'),
     path('house/create', views.HouseCreate.as_view(), name='house-create'),
     path('houses/', views.HousePublic.as_view(({'get': 'list'})), name='houses-list'),

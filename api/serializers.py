@@ -73,19 +73,56 @@ class PhoneAuthenticationSerializer(Serializer):
 
         user = auth.PhoneAuthBackend.authenticate(phone=phone)
 
-        if user is None:
+        if user:
+            if not user.is_active:
+                raise ValidationError(
+                    'This user has been deactivated.'
+                )
+
+            else:
+                return {
+                    'user': user,
+                }
+
+        else:
+            raise ValidationError('User not found.')
+
+
+class TokenAuthenticationSerializer(Serializer):
+    """
+    Authenticates an existing user.
+    A JSON web token is required.
+    """
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    # Ignore these fields if they are included in the request.
+    key = CharField(max_length=255, write_only=True)
+
+    def validate(self, data):
+        """
+        Validates user data.
+        """
+        print(data)
+        key = data.get('key', None)
+
+        if key is None:
             raise ValidationError(
-                'A user with this phone number was not found.'
+                'A registration token is required to log in.'
             )
 
-        if not user.is_active:
-            raise ValidationError(
-                'This user has been deactivated.'
-            )
+        try:
+            user = User.objects.get(key=key)
+            return {
+                    'user': user,
+                   }
 
-        return {
-            'user': user,
-        }
+        except User.DoesNotExist:
+            return "token has been used or doesn't created"
 
 
 class APILoginSerializer(Serializer):

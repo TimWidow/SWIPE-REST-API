@@ -143,6 +143,7 @@ class User(AbstractUser):
     subscription_date = DateTimeField(blank=True, null=True, verbose_name='Дата окончания подписки')
     notifications = CharField(max_length=10, choices=NOTIFY, default='ME', verbose_name='Уведомления')
     switch = BooleanField(default=False, verbose_name='Переключить звонки и сообщения на агента')
+    key = CharField(max_length=255, blank=True, null=True)
 
     @property
     def token(self):
