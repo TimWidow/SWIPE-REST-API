@@ -152,10 +152,14 @@ class PhoneAuthenticationView(GenericAPIView):
 
         if serializer.is_valid():
             print(serializer.validated_data)
-            user = serializer.validated_data['user']
-            if user:
-                send(user.phone)
-                return Response({'sms': 'sent'}, status=status.HTTP_200_OK)
+            try:
+                user = serializer.validated_data['user']
+                if user:
+                    send(user.phone)
+                    return Response({'sms': 'sent'}, status=status.HTTP_200_OK)
+            except Exception as error:
+                print(error)
+                return Response({'phone': 'not found, try again'}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 

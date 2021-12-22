@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from .models import User
 from .verify import send, check
@@ -32,7 +33,10 @@ class PhoneAuthBackend(object):
     def authenticate(phone=None):
         try:
             user = User.objects.get(phone=phone)
-            return user
+            if not user.is_active:
+                return 'This user has been deactivated.'
+            else:
+                return user
 
         except User.DoesNotExist:
             return redirect('registration')

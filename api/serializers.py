@@ -2,7 +2,7 @@ from datetime import datetime
 from importlib import import_module
 
 import pytz as pytz
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -71,21 +71,17 @@ class PhoneAuthenticationSerializer(Serializer):
                 'An phone number is required to log in.'
             )
 
-        user = auth.PhoneAuthBackend.authenticate(phone=phone)
-
-        if user:
+        try:
+            user = User.objects.get(phone=phone)
             if not user.is_active:
-                raise ValidationError(
-                    'This user has been deactivated.'
-                )
-
+                return 'This user has been deactivated.'
             else:
                 return {
                     'user': user,
                 }
 
-        else:
-            raise ValidationError('User not found.')
+        except User.DoesNotExist:
+            return 'phone not found, try again'
 
 
 class TokenAuthenticationSerializer(Serializer):
@@ -118,8 +114,8 @@ class TokenAuthenticationSerializer(Serializer):
         try:
             user = User.objects.get(key=key)
             return {
-                    'user': user,
-                   }
+                'user': user,
+            }
 
         except User.DoesNotExist:
             return "token has been used or doesn't created"
