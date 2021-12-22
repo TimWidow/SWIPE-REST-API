@@ -9,13 +9,14 @@ class EmailAuthBackend(object):
     def authenticate(email=None, password=None):
         try:
             user = User.objects.get(email=email)
+
+            if not user.check_password(password):
+                return None
+            else:
+                return user
+
         except User.DoesNotExist:
             return None
-
-        if not user.check_password(password):
-            return None
-
-        return user
 
     @staticmethod
     def get_user(user_id):
@@ -31,11 +32,10 @@ class PhoneAuthBackend(object):
     def authenticate(phone=None):
         try:
             user = User.objects.get(phone=phone)
+            return user
 
         except User.DoesNotExist:
             return redirect('registration')
-
-        return user
 
     @staticmethod
     def get_user(user_id):
