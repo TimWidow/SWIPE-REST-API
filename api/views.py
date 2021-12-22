@@ -60,13 +60,13 @@ class RegistrationAPIView(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        print(user)
+        print(user, serializer.data.get('token', None))
         user.key = serializer.data.get('token', None)
         user.save()
 
         return Response(
             {
-                'token': user.key,
+                'token': serializer.data.get('token', None),
             },
             status=status.HTTP_201_CREATED,
         )
