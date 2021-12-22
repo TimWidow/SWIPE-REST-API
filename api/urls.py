@@ -9,7 +9,7 @@ router = routers.SimpleRouter()
 
 
 urlpatterns = [
-    path('google_login/', TemplateView.as_view(template_name="index.html")),
+    path('google_login/', TemplateView.as_view(template_name="api/index.html")),
     path('google_accounts/', include('allauth.urls')),
     path('logout/', LogoutView.as_view()),
     path('registration/', views.RegistrationAPIView.as_view(), name='registration'),
