@@ -8,12 +8,12 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_ROOT = Path(__file__).resolve(strict=True).parent
 
-SECRET_KEY = "ql7uffku8cl)_++*-^x1&ikexbuyec2c6u-56nqr%e!#5@ych5"
+SECRET_KEY = ""
 
 DEBUG = True
 DEBUG_TOOLBAR = False
 
-ALLOWED_HOSTS = ['188.166.95.221', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -155,15 +155,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
 
 # smtp
-DEFAULT_FROM_EMAIL = 'eat.twix@gmail.com'
+DEFAULT_FROM_EMAIL = ''
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
+EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EASY_MAPS_GOOGLE_KEY = 'AIzaSyAMPq6gbs7dfX-AMgFtCvTpjK8ltHErwcY'
+EASY_MAPS_GOOGLE_KEY = ''
 # REST FRAMEWORK config
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -182,25 +182,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 
 }
-
-# REST_FRAMEWORK = {
-#    'DEFAULT_AUTHENTICATION_CLASSES': [
-#        'rest_framework.authentication.BasicAuthentication',
-#        'rest_framework.authentication.SessionAuthentication',
-#        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-#    ],
-#    'DEFAULT_PERMISSION_CLASSES': [
-#        'rest_framework.permissions.IsAuthenticated',
-#    ],
-#   'DEFAULT_RENDERER_CLASSES': (
-#       'rest_framework.renderers.JSONRenderer',
-#   ),
-# 'DEFAULT_PARSER_CLASSES': (
-#    'rest_framework.parsers.JSONParser',
-# ),
-#    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
-#
-# }
 
 JWT_AUTH = {
 
@@ -228,7 +209,7 @@ if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
-AUTHY_API_KEY = '8FDRj4VX0UO2b8BChgl7J7khVDXnDzJi'
+AUTHY_API_KEY = ''
 
 TWILIO_PHONE = config('TWILIO_PHONE', default=None)
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default=None)
